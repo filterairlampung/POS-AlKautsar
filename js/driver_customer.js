@@ -68,6 +68,19 @@ window.POS_DRIVER_CUSTOMER = (function () {
     clearTimeout(toast._dcTimer);
     toast._dcTimer = setTimeout(() => toast.classList.remove("show"), 3600);
   }
+  function showModalEl(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.add("show", "active");
+    modal.style.display = "flex";
+  }
+
+  function hideModalEl(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove("show", "active");
+    modal.style.display = "none";
+  }
 
   function getSession() {
     return window.POS_AUTH && typeof window.POS_AUTH.getSession === "function"
