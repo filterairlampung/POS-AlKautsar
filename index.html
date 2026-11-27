@@ -253,6 +253,24 @@
               </button>
             </div>
           </div>
+          <!-- BANNER ANTREAN OFFLINE (TAMPIL OTOMATIS JIKA ADA DATA TERTUNDA) -->
+          <div id="offline-queue-banner" class="offline-queue-banner no-print" style="display: none;">
+            <div class="offline-banner-left">
+              <i class="fas fa-cloud-arrow-up"></i>
+              <div>
+                <strong>Ada <span id="offline-queue-count">0</span> antrean offline</strong>
+                <span id="offline-network-badge" class="net-pill online">Online</span>
+              </div>
+            </div>
+            <div class="offline-banner-actions">
+              <button type="button" class="btn-offline-detail" onclick="POS_DRIVER_CUSTOMER.openOfflineQueueModal()">
+                Lihat
+              </button>
+              <button type="button" id="btn-sync-offline" class="btn-offline-sync" onclick="POS_DRIVER_CUSTOMER.syncOfflineQueue(false)">
+                <i class="fas fa-cloud-arrow-up"></i> Kirim Ulang (Sync)
+              </button>
+            </div>
+          </div>
 
           <!-- ============================================================ -->
           <!-- PAGE 1: BERANDA (HOME)                                       -->
@@ -694,6 +712,124 @@
               </button>
             </div>
           </section>
+<!-- ============================================================ -->
+          <!-- PAGE 9: TUGAS SUPIR & NGAMPAS (FASE 3)                       -->
+          <!-- ============================================================ -->
+          <section id="page-supir" class="page-section">
+            <div class="phase3-header-bar">
+              <div>
+                <h3><i class="fas fa-truck-fast"></i> Tugas Pengantaran &amp; Ngampas</h3>
+                <small>Uang lapangan baru masuk Arus Kas setelah diverifikasi di toko.</small>
+              </div>
+              <div class="phase3-header-actions">
+                <button type="button" class="btn-aksi-primary" onclick="POS_DRIVER_CUSTOMER.openMulaiAntarModal()">
+                  <i class="fas fa-plus"></i> Mulai Pengantaran
+                </button>
+                <button type="button" class="btn-secondary-inline" onclick="POS_DRIVER_CUSTOMER.loadDaftarTugasSupir()">
+                  <i class="fas fa-rotate"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="tabs-container">
+              <div id="tab-btn-supir-aktif" class="tab-btn active" onclick="POS_DRIVER_CUSTOMER.switchSupirTab('aktif')">
+                <i class="fas fa-route"></i> Tugas Aktif
+              </div>
+              <div id="tab-btn-supir-verifikasi" class="tab-btn" onclick="POS_DRIVER_CUSTOMER.switchSupirTab('verifikasi')">
+                <i class="fas fa-shield-check"></i> Menunggu Verifikasi
+                <span id="badge-count-verifikasi" class="tab-count-badge" style="display: none;">0</span>
+              </div>
+              <div id="tab-btn-supir-selesai" class="tab-btn" onclick="POS_DRIVER_CUSTOMER.switchSupirTab('selesai')">
+                <i class="fas fa-circle-check"></i> Selesai
+              </div>
+            </div>
+
+            <div id="supir-tugas-container" class="tugas-list-grid">
+              <p class="empty-state-text">Memuat daftar tugas supir...</p>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 10: DIREKTORI PELANGGAN & AGING PIUTANG (FASE 3)        -->
+          <!-- ============================================================ -->
+          <section id="page-pelanggan-piutang" class="page-section">
+            <div class="tabs-container">
+              <div id="tab-btn-pelanggan" class="tab-btn active" onclick="POS_DRIVER_CUSTOMER.switchPelangganTab('pelanggan')">
+                <i class="fas fa-address-book"></i> Direktori Pelanggan
+              </div>
+              <div id="tab-btn-piutang" class="tab-btn" onclick="POS_DRIVER_CUSTOMER.switchPelangganTab('piutang')">
+                <i class="fas fa-file-invoice-dollar"></i> Piutang Aktif (Aging)
+              </div>
+            </div>
+
+            <!-- TAB 1: DIREKTORI PELANGGAN -->
+            <div id="tab-pane-pelanggan" class="tab-content active">
+              <div class="filter-bar filter-bar-box">
+                <input
+                  type="search"
+                  id="plg-search"
+                  placeholder="Cari nama, WA, alamat, atau catatan..."
+                  oninput="POS_DRIVER_CUSTOMER.renderPelangganList()"
+                >
+                <select id="plg-filter-kategori" onchange="POS_DRIVER_CUSTOMER.renderPelangganList()">
+                  <option value="">Semua Kategori</option>
+                  <option value="Ritel">Ritel</option>
+                  <option value="Depot">Depot / DAMIU</option>
+                  <option value="Agen">Agen / Reseller</option>
+                  <option value="Proyek">Proyek / Instansi</option>
+                </select>
+                <button type="button" class="btn-aksi-primary" onclick="POS_DRIVER_CUSTOMER.openPelangganModal('')">
+                  <i class="fas fa-user-plus"></i> Tambah Pelanggan
+                </button>
+              </div>
+
+              <div id="pelanggan-list-container" class="customer-list-grid">
+                <p class="empty-state-text">Memuat direktori pelanggan...</p>
+              </div>
+            </div>
+
+            <!-- TAB 2: PIUTANG AKTIF & AGING -->
+            <div id="tab-pane-piutang" class="tab-content">
+              <div class="aging-summary-grid">
+                <button type="button" class="aging-card-btn active" data-bucket="" onclick="POS_DRIVER_CUSTOMER.setPiutangBucketFilter('')">
+                  <span class="aging-card-label">Semua Piutang</span>
+                  <strong id="aging-total-all">Rp 0</strong>
+                  <small id="aging-count-all">0 nota</small>
+                </button>
+                <button type="button" class="aging-card-btn aging-card-hijau" data-bucket="HIJAU" onclick="POS_DRIVER_CUSTOMER.setPiutangBucketFilter('HIJAU')">
+                  <span class="aging-card-label">&lt; 7 Hari</span>
+                  <strong id="aging-total-hijau">Rp 0</strong>
+                  <small id="aging-count-hijau">0 nota</small>
+                </button>
+                <button type="button" class="aging-card-btn aging-card-kuning" data-bucket="KUNING" onclick="POS_DRIVER_CUSTOMER.setPiutangBucketFilter('KUNING')">
+                  <span class="aging-card-label">7–30 Hari</span>
+                  <strong id="aging-total-kuning">Rp 0</strong>
+                  <small id="aging-count-kuning">0 nota</small>
+                </button>
+                <button type="button" class="aging-card-btn aging-card-merah" data-bucket="MERAH" onclick="POS_DRIVER_CUSTOMER.setPiutangBucketFilter('MERAH')">
+                  <span class="aging-card-label">&gt; 30 Hari</span>
+                  <strong id="aging-total-merah">Rp 0</strong>
+                  <small id="aging-count-merah">0 nota</small>
+                </button>
+              </div>
+
+              <div class="filter-bar filter-bar-box">
+                <input
+                  type="search"
+                  id="piutang-search"
+                  placeholder="Cari nama pelanggan atau ID nota..."
+                  oninput="POS_DRIVER_CUSTOMER.renderPiutangList()"
+                >
+                <button type="button" class="btn-secondary-inline" onclick="POS_DRIVER_CUSTOMER.loadPiutangAging()">
+                  <i class="fas fa-rotate"></i> Muat Ulang
+                </button>
+              </div>
+
+              <div id="piutang-list-container" class="piutang-list-grid">
+                <p class="empty-state-text">Memuat data piutang aktif...</p>
+              </div>
+            </div>
+          </section>
 
           <!-- ============================================================ -->
           <!-- PAGE KERANGKA MODUL FASE 3 - 6 (TERKONTROL RBAC)             -->
@@ -865,6 +1001,387 @@
         </button>
       </div>
     </div>
+    <!-- ================================================================== -->
+    <!-- MODAL FASE 3.1: TAMBAH / EDIT PELANGGAN                            -->
+    <!-- ================================================================== -->
+    <div id="modal-pelanggan" class="modal-overlay no-print">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-pelanggan-title"><i class="fas fa-user-plus"></i> Tambah Pelanggan</h3>
+          <i class="fas fa-times" onclick="POS_DRIVER_CUSTOMER.closePelangganModal()"></i>
+        </div>
+
+        <form onsubmit="POS_DRIVER_CUSTOMER.submitPelangganForm(event)">
+          <input type="hidden" id="plg-input-id">
+
+          <div class="input-group">
+            <label for="plg-input-nama">Nama Pelanggan / Depot</label>
+            <input type="text" id="plg-input-nama" placeholder="Contoh: Depot Tirta Jaya" required>
+          </div>
+
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="plg-input-wa">No. WhatsApp</label>
+              <input type="tel" id="plg-input-wa" placeholder="0812xxxx">
+            </div>
+            <div class="input-group">
+              <label for="plg-input-kategori">Kategori</label>
+              <select id="plg-input-kategori">
+                <option value="Ritel">Ritel</option>
+                <option value="Depot">Depot / DAMIU</option>
+                <option value="Agen">Agen / Reseller</option>
+                <option value="Proyek">Proyek / Instansi</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="plg-input-alamat">Alamat Lengkap</label>
+            <textarea id="plg-input-alamat" rows="2" placeholder="Jl. ..."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label for="plg-input-maps">Link Google Maps</label>
+            <input type="url" id="plg-input-maps" placeholder="https://maps.google.com/...">
+          </div>
+
+          <div class="input-group">
+            <label for="plg-input-latlng">Koordinat Lat,Lng (Opsional / Auto dari Link Maps)</label>
+            <input type="text" id="plg-input-latlng" placeholder="-5.397140,105.266789">
+          </div>
+
+          <div class="input-group">
+            <label for="plg-input-catatan">Catatan Khusus</label>
+            <textarea id="plg-input-catatan" rows="2" placeholder="Patokan rumah, jadwal buka, dll."></textarea>
+          </div>
+
+          <div class="modal-footer-split">
+            <button type="button" id="btn-hapus-pelanggan" class="btn-mini-danger" style="display: none;" onclick="POS_DRIVER_CUSTOMER.nonaktifkanPelanggan()">
+              <i class="fas fa-user-slash"></i> Nonaktifkan
+            </button>
+            <button type="submit" id="btn-simpan-pelanggan" class="btn-simpan-trx">
+              <i class="fas fa-floppy-disk"></i> Simpan Pelanggan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL FASE 3.2: BAYAR CICILAN / PELUNASAN PIUTANG                  -->
+    <!-- ================================================================== -->
+    <div id="modal-lunasi-piutang" class="modal-overlay no-print">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-hand-holding-dollar"></i> Pembayaran Piutang</h3>
+          <i class="fas fa-times" onclick="POS_DRIVER_CUSTOMER.closeLunasiPiutangModal()"></i>
+        </div>
+
+        <div id="lunasi-piutang-summary" class="piutang-summary-box"></div>
+
+        <form onsubmit="POS_DRIVER_CUSTOMER.submitLunasiPiutang(event)">
+          <div class="input-group">
+            <div class="label-with-action">
+              <label for="lunasi-nominal">Nominal Bayar (Rp)</label>
+              <button type="button" class="btn-uang-pas" onclick="POS_DRIVER_CUSTOMER.setLunasiPenuh()">Lunas 100%</button>
+            </div>
+            <input type="number" id="lunasi-nominal" min="1" required>
+          </div>
+
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="lunasi-metode">Metode Bayar</label>
+              <select id="lunasi-metode">
+                <option value="Tunai">Tunai</option>
+                <option value="Transfer">Transfer Bank</option>
+                <option value="QRIS">QRIS</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="lunasi-akun-kas">Masuk ke Akun Kas</label>
+              <select id="lunasi-akun-kas" required></select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="lunasi-tanggal">Tanggal Pembayaran</label>
+            <input type="date" id="lunasi-tanggal" required>
+          </div>
+
+          <div class="input-group">
+            <label for="lunasi-keterangan">Catatan (Opsional)</label>
+            <input type="text" id="lunasi-keterangan" placeholder="Contoh: Cicilan ke-1 via Transfer Mandiri">
+          </div>
+
+          <button type="submit" id="btn-submit-lunasi" class="btn-simpan-trx">
+            <i class="fas fa-check-circle"></i> Simpan Pembayaran Piutang
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL FASE 3.3: FORM KEBERANGKATAN / MULAI PENGANTARAN             -->
+    <!-- ================================================================== -->
+    <div id="modal-mulai-antar" class="modal-overlay no-print">
+      <div class="modal-content modal-content-lg">
+        <div class="modal-header">
+          <h3><i class="fas fa-truck-loading"></i> Form Keberangkatan Supir</h3>
+          <i class="fas fa-times" onclick="POS_DRIVER_CUSTOMER.closeMulaiAntarModal()"></i>
+        </div>
+
+        <form onsubmit="POS_DRIVER_CUSTOMER.submitMulaiPengantaran(event)">
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="mulai-tipe-tugas">Tipe Tugas</label>
+              <select id="mulai-tipe-tugas">
+                <option value="ANTARAN_PESANAN">Antaran Pesanan</option>
+                <option value="NGAMPAS">Ngampas / Kanvas</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="mulai-supir-nama">Nama Supir</label>
+              <input type="text" id="mulai-supir-nama" placeholder="Nama supir bertugas" required>
+            </div>
+          </div>
+
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="mulai-tanggal">Tanggal Jadwal</label>
+              <input type="date" id="mulai-tanggal" required>
+            </div>
+            <div class="input-group">
+              <label for="mulai-waktu">Jam Berangkat (WIB)</label>
+              <input type="time" id="mulai-waktu" required>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="mulai-pelanggan-select">Ambil dari Direktori Pelanggan (Opsional)</label>
+            <select id="mulai-pelanggan-select" onchange="POS_DRIVER_CUSTOMER.onMulaiPelangganPicked()"></select>
+          </div>
+
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="mulai-nama-pelanggan">Nama Pelanggan / Rute</label>
+              <input type="text" id="mulai-nama-pelanggan" placeholder="Nama pelanggan atau rute ngampas" required>
+            </div>
+            <div class="input-group">
+              <label for="mulai-no-wa">No. WA Pelanggan</label>
+              <input type="tel" id="mulai-no-wa" placeholder="08xx">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="mulai-alamat">Alamat Tujuan</label>
+            <input type="text" id="mulai-alamat" placeholder="Alamat pengantaran">
+          </div>
+
+          <div class="input-group">
+            <label for="mulai-maps-url">Link Google Maps</label>
+            <input type="url" id="mulai-maps-url" placeholder="https://maps.google.com/...">
+          </div>
+
+          <!-- Daftar Muatan -->
+          <div class="muatan-builder-box">
+            <label><strong>Daftar Muatan Barang</strong></label>
+            <div class="muatan-add-row">
+              <select id="mulai-barang-select"></select>
+              <input type="number" id="mulai-qty-barang" min="1" value="1" style="width: 72px;">
+              <button type="button" class="btn-aksi-primary" onclick="POS_DRIVER_CUSTOMER.addMuatanItem()">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div id="mulai-muatan-list" class="muatan-list-box"></div>
+            <div class="muatan-total-bar">
+              <span>Estimasi Nilai Muatan:</span>
+              <strong id="mulai-total-estimasi">Rp 0</strong>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="mulai-catatan">Catatan Pengantaran</label>
+            <input type="text" id="mulai-catatan" placeholder="Pesan khusus untuk supir...">
+          </div>
+
+          <label class="checkbox-inline-row">
+            <input type="checkbox" id="mulai-sinkron-cal" checked>
+            <span>Sinkronkan otomatis ke Google Calendar operasional</span>
+          </label>
+
+          <button type="submit" id="btn-submit-mulai-antar" class="btn-simpan-trx">
+            <i class="fas fa-truck-fast"></i> Simpan &amp; Mulai Pengantaran
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL FASE 3.4: FORM SELESAI PENGANTARAN (LAPANGAN + FOTO CANVAS)  -->
+    <!-- ================================================================== -->
+    <div id="modal-selesai-antar" class="modal-overlay no-print">
+      <div class="modal-content modal-content-lg">
+        <div class="modal-header">
+          <h3><i class="fas fa-clipboard-check"></i> Laporan Selesai Pengantaran</h3>
+          <i class="fas fa-times" onclick="POS_DRIVER_CUSTOMER.closeSelesaiModal()"></i>
+        </div>
+
+        <div id="selesai-tugas-summary" class="piutang-summary-box"></div>
+
+        <form onsubmit="POS_DRIVER_CUSTOMER.submitSelesaiPengantaran(event)">
+          <label class="section-sub-label">Ceklis Barang Diturunkan &amp; Penyesuaian Harga Lapangan</label>
+          <div id="selesai-items-container" class="realisasi-items-list"></div>
+
+          <div class="realisasi-summary-bar">
+            <div>Total Tagihan Realisasi: <strong id="selesai-total-realisasi">Rp 0</strong></div>
+            <span id="selesai-total-retur" class="badge stok">0 pcs retur</span>
+          </div>
+
+          <div class="grid-3-inputs">
+            <div class="input-group">
+              <label for="selesai-diskon">Diskon Selisih (Rp)</label>
+              <input type="number" id="selesai-diskon" min="0" value="0" oninput="POS_DRIVER_CUSTOMER.recalcSelesaiTotal()">
+            </div>
+            <div class="input-group">
+              <label for="selesai-cash">Cash Lapangan (Rp)</label>
+              <input type="number" id="selesai-cash" min="0" value="0">
+            </div>
+            <div class="input-group">
+              <label for="selesai-transfer">Transfer Lapangan (Rp)</label>
+              <input type="number" id="selesai-transfer" min="0" value="0">
+            </div>
+          </div>
+
+          <!-- Upload Foto Otomatis Kompresi < 200 KB -->
+          <div class="grid-2-inputs">
+            <div class="photo-upload-card">
+              <label for="selesai-foto-antar"><i class="fas fa-camera"></i> Foto Bukti Antar</label>
+              <input
+                type="file"
+                id="selesai-foto-antar"
+                accept="image/*"
+                capture="environment"
+                onchange="POS_DRIVER_CUSTOMER.onPhotoInputChange('antar', this)"
+              >
+              <small id="info-foto-antar" class="photo-meta-info">Otomatis dikompresi &lt; 200 KB.</small>
+              <img id="preview-foto-antar" class="photo-preview-img" style="display: none;" alt="Preview Foto Antar">
+            </div>
+
+            <div class="photo-upload-card">
+              <label for="selesai-foto-bayar"><i class="fas fa-receipt"></i> Foto Bukti Bayar / Transfer</label>
+              <input
+                type="file"
+                id="selesai-foto-bayar"
+                accept="image/*"
+                capture="environment"
+                onchange="POS_DRIVER_CUSTOMER.onPhotoInputChange('bayar', this)"
+              >
+              <small id="info-foto-bayar" class="photo-meta-info">Opsional (wajib jika ada transfer).</small>
+              <img id="preview-foto-bayar" class="photo-preview-img" style="display: none;" alt="Preview Foto Bayar">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="selesai-catatan">Catatan Lapangan</label>
+            <textarea id="selesai-catatan" rows="2" placeholder="Keterangan retur, penerima barang, dll."></textarea>
+          </div>
+
+          <button type="submit" id="btn-submit-selesai-antar" class="btn-simpan-trx">
+            <i class="fas fa-paper-plane"></i> Kirim Laporan (Menunggu Verifikasi)
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL FASE 3.5: VERIFIKASI SETORAN SUPIR DI TOKO                   -->
+    <!-- ================================================================== -->
+    <div id="modal-verifikasi-supir" class="modal-overlay no-print">
+      <div class="modal-content modal-content-lg">
+        <div class="modal-header">
+          <h3><i class="fas fa-shield-check"></i> Verifikasi Setoran Supir &amp; Masuk Kas</h3>
+          <i class="fas fa-times" onclick="POS_DRIVER_CUSTOMER.closeVerifikasiModal()"></i>
+        </div>
+
+        <div id="verif-tugas-detail" class="piutang-summary-box"></div>
+
+        <form onsubmit="POS_DRIVER_CUSTOMER.submitVerifikasiSetoran(event)">
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="verif-cash">Uang Cash Fisik Diterima (Rp)</label>
+              <input type="number" id="verif-cash" min="0" value="0" required>
+            </div>
+            <div class="input-group">
+              <label for="verif-akun-cash">Akun Kas untuk Cash</label>
+              <select id="verif-akun-cash"></select>
+            </div>
+          </div>
+
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="verif-transfer">Nominal Transfer Terkonfirmasi (Rp)</label>
+              <input type="number" id="verif-transfer" min="0" value="0" required>
+            </div>
+            <div class="input-group">
+              <label for="verif-akun-transfer">Akun Kas untuk Transfer</label>
+              <select id="verif-akun-transfer"></select>
+            </div>
+          </div>
+
+          <div class="grid-2-inputs">
+            <div class="input-group">
+              <label for="verif-diskon">Diskon Selisih Final (Rp)</label>
+              <input type="number" id="verif-diskon" min="0" value="0">
+            </div>
+            <div class="input-group">
+              <label for="verif-tanggal">Tanggal Pembukuan Kas</label>
+              <input type="date" id="verif-tanggal" required>
+            </div>
+          </div>
+
+          <label class="checkbox-inline-row">
+            <input type="checkbox" id="verif-retur-stok" checked>
+            <span>Kembalikan otomatis barang retur ke MASTER BARANG</span>
+          </label>
+
+          <label class="checkbox-inline-row">
+            <input type="checkbox" id="verif-sisa-piutang">
+            <span>Catat sisa tagihan (jika belum lunas) ke tab PIUTANG</span>
+          </label>
+
+          <div class="input-group">
+            <label for="verif-catatan">Catatan Verifikasi Toko</label>
+            <input type="text" id="verif-catatan" placeholder="Contoh: Uang pas, retur 2 galon dicek lengkap">
+          </div>
+
+          <button type="submit" id="btn-submit-verifikasi" class="btn-simpan-trx">
+            <i class="fas fa-check-double"></i> Verifikasi &amp; Masukkan ke Arus Kas
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL FASE 3.6: DETAIL ANTREAN OFFLINE                             -->
+    <!-- ================================================================== -->
+    <div id="modal-offline-queue" class="modal-overlay no-print">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-cloud-arrow-up"></i> Daftar Antrean Offline</h3>
+          <i class="fas fa-times" onclick="POS_DRIVER_CUSTOMER.closeOfflineQueueModal()"></i>
+        </div>
+
+        <div class="info-banner-blue">
+          Setiap antrean menyimpan <b>clientRequestId</b> yang sama agar aman dikirim ulang berkali-kali tanpa risiko data ganda.
+        </div>
+
+        <div id="offline-queue-list"></div>
+
+        <button type="button" class="btn-simpan-trx" style="margin-top: 12px;" onclick="POS_DRIVER_CUSTOMER.syncOfflineQueue(false)">
+          <i class="fas fa-cloud-arrow-up"></i> Kirim Ulang Semua Sekarang
+        </button>
+      </div>
+    </div>
 
   </div>
 
@@ -877,5 +1394,6 @@
   <script src="./js/auth.js"></script>
   <script src="./js/receipt.js"></script>
   <script src="./js/retail.js"></script>
+  <script src="./js/driver_customer.js"></script>
 </body>
 </html>

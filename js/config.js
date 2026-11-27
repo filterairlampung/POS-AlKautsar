@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * POS AL-KAUTSAR BUMINDO v3.0 — KONFIGURASI FRONTEND STAGING
+ * POS AL-KAUTSAR BUMINDO v3.1 — KONFIGURASI FRONTEND STAGING
  * File: js/config.js
  * ============================================================================
  * ATURAN KEAMANAN: DILARANG menyimpan API Key, Password, atau Spreadsheet ID
@@ -10,13 +10,14 @@
 window.POS_CONFIG = (function () {
   "use strict";
 
-  // Ganti URL di bawah ini dengan Web App URL hasil deploy Google Apps Script Staging Fase 1
+  // Ganti URL di bawah ini dengan Web App URL hasil deploy Google Apps Script Staging
   const GAS_WEB_APP_URL =
     "https://script.google.com/macros/s/AKfycbznGxMHlmgwmbo_-X1aiL79ILHtktME6q4NXgFfvfdzYterPTc7oktPKgpA1t6XmZtP1w/exec";
 
-  const APP_VERSION = "3.0.0-staging";
+  const APP_VERSION = "3.1.0-staging";
   const SESSION_STORAGE_KEY = "pos_alkautsar_v3_session";
   const IOS_BANNER_DISMISS_KEY = "pos_alkautsar_v3_ios_banner_dismissed";
+  const OFFLINE_QUEUE_STORAGE_KEY = "pos_alkautsar_v3_offline_queue";
   const REQUEST_TIMEOUT_MS = 35000;
 
   // Definisi Cabang & Tema Dinamis
@@ -54,7 +55,7 @@ window.POS_CONFIG = (function () {
   const ROLES = ["Karyawan", "Supir", "Manajer", "Bos", "Admin"];
   const VOID_ALLOWED_ROLES = ["Manajer", "Bos", "Admin"];
 
-  // Opsi Akun Kas & Kode COA sesuai 05_Core_Retail.gs Fase 1
+  // Opsi Akun Kas & Kode COA sesuai 05_Core_Retail.gs
   const AKUN_KAS_OPTIONS = [
     { value: "Kas Laci", label: "Kas Laci (Tunai Fisik Toko)" },
     { value: "Rekening Toko", label: "Rekening Toko" },
@@ -77,7 +78,7 @@ window.POS_CONFIG = (function () {
     ]
   };
 
-  // Matriks Menu Sidebar & Halaman (Fase 2 Aktif + Fase 3–6 Kerangka Terstruktur)
+  // Matriks Menu Sidebar & Halaman (Fase 2 & 3 Aktif + Fase 4–6 Kerangka Terstruktur)
   const MENU_ITEMS = [
     // --- FASE 2: OPERASIONAL RITEL INTI (AKTIF) ---
     {
@@ -150,17 +151,16 @@ window.POS_CONFIG = (function () {
       requireOperationalBranch: true
     },
 
-    // --- FASE 3–6: MODUL LANJUTAN (KERANGKA RBAC SIAP ISI) ---
+    // --- FASE 3: SUPIR, NGAMPAS, PELANGGAN & PIUTANG (AKTIF) ---
     {
       id: "page-supir",
       label: "Tugas Supir & Ngampas",
       icon: "fa-truck-fast",
       group: "Distribusi & Proyek",
-      roles: ["Supir", "Manajer", "Bos", "Admin"],
+      roles: ["Karyawan", "Supir", "Manajer", "Bos", "Admin"],
       phase: 3,
-      implemented: false,
-      placeholderDesc:
-        "Modul keberangkatan & penyelesaian pengantaran/ngampas supir, ceklis turun barang, penyesuaian harga lapangan, tautan Google Maps, serta unggah foto bukti antar."
+      implemented: true,
+      requireOperationalBranch: true
     },
     {
       id: "page-pelanggan-piutang",
@@ -169,10 +169,11 @@ window.POS_CONFIG = (function () {
       group: "Distribusi & Proyek",
       roles: ["Karyawan", "Manajer", "Bos", "Admin"],
       phase: 3,
-      implemented: false,
-      placeholderDesc:
-        "Direktori pelanggan terpusat, riwayat piutang aktif, tanggal jatuh tempo, dan cicilan pelunasan piutang."
+      implemented: true,
+      requireOperationalBranch: true
     },
+
+    // --- FASE 4–6: MODUL LANJUTAN (KERANGKA RBAC SIAP ISI) ---
     {
       id: "page-damiu",
       label: "Proyek DAMIU",
@@ -246,6 +247,7 @@ window.POS_CONFIG = (function () {
     APP_VERSION,
     SESSION_STORAGE_KEY,
     IOS_BANNER_DISMISS_KEY,
+    OFFLINE_QUEUE_STORAGE_KEY,
     REQUEST_TIMEOUT_MS,
     BRANCHES,
     ROLES,

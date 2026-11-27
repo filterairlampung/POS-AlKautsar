@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * POS AL-KAUTSAR BUMINDO v3.0 — KLIEN REST API & REQUEST ENVELOPE STANDAR
+ * POS AL-KAUTSAR BUMINDO v3.1 — KLIEN REST API & REQUEST ENVELOPE STANDAR
  * File: js/api.js
  * ============================================================================
  * Kontrak Envelope Backend (04_Router.gs):
@@ -27,6 +27,15 @@ window.POS_API = (function () {
     }
     const rnd = Math.random().toString(36).substring(2, 10);
     return `${pfx}_${Date.now().toString(36)}_${rnd}`;
+  }
+
+  /**
+   * Mengecek apakah error berasal dari gangguan sinyal / timeout (kandidat Offline Queue).
+   */
+  function isOfflineError(res) {
+    if (!navigator.onLine) return true;
+    if (!res || typeof res !== "object") return true;
+    return res.code === "NETWORK_ERROR" || res.code === "REQUEST_TIMEOUT";
   }
 
   /**
@@ -121,6 +130,7 @@ window.POS_API = (function () {
           parsed.code = parsed.errorCode;
         }
       }
+
       // Interceptor sesi tidak valid / kedaluwarsa -> paksa logout bersih
       if (
         !isPublic &&
@@ -213,7 +223,7 @@ window.POS_API = (function () {
   }
 
   // ==========================================================================
-  // WRAPPER TAMBAHAN FASE 2 (UNTUK RIWAYAT & SIMPAN PENGATURAN STRUK)
+  // WRAPPER TAMBAHAN FASE 2
   // ==========================================================================
 
   function getRiwayatOperasional(payload = {}) {
@@ -228,8 +238,58 @@ window.POS_API = (function () {
     return request("simpanPengaturanToko", payload);
   }
 
+  // ==========================================================================
+  // WRAPPER TAMBAHAN FASE 3 (SUPIR, PELANGGAN, PIUTANG & CALENDAR)
+  // ==========================================================================
+
+  function kelolaPelanggan(payload = {}, clientRequestId) {
+    return request("kelolaPelanggan", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("PLG")
+    });
+  }
+
+  function getPiutangAging(payload = {}) {
+    return request("getPiutangAging", payload);
+  }
+
+  function lunasiPiutang(payload = {}, clientRequestId) {
+    return request("lunasiPiutang", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("PTG")
+    });
+  }
+
+  function getDaftarTugasSupir(payload = {}) {
+    return request("getDaftarTugasSupir", payload);
+  }
+
+  function mulaiPengantaran(payload = {}, clientRequestId) {
+    return request("mulaiPengantaran", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("ANT")
+    });
+  }
+
+  function submitSelesaiPengantaran(payload = {}, clientRequestId) {
+    return request("submitSelesaiPengantaran", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("SLS"),
+      timeoutMs: 45000 // Toleransi ekstra untuk unggah foto ke Google Drive
+    });
+  }
+
+  function verifikasiSetoranSupir(payload = {}, clientRequestId) {
+    return request("verifikasiSetoranSupir", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("VER")
+    });
+  }
+
+  function sinkronCalendar(payload = {}, clientRequestId) {
+    return request("sinkronCalendar", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("CAL")
+    });
+  }
+
   return {
     generateClientRequestId,
+    isOfflineError,
     request,
     login,
     logout,
@@ -245,6 +305,14 @@ window.POS_API = (function () {
     tutupKas,
     getRiwayatOperasional,
     getDetailTransaksi,
-    simpanPengaturanToko
+    simpanPengaturanToko,
+    kelolaPelanggan,
+    getPiutangAging,
+    lunasiPiutang,
+    getDaftarTugasSupir,
+    mulaiPengantaran,
+    submitSelesaiPengantaran,
+    verifikasiSetoranSupir,
+    sinkronCalendar
   };
 })();
