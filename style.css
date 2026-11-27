@@ -2781,3 +2781,932 @@ td {
   line-height: 1;
   color: #475569;
 }
+/* ============================================================================
+   FASE 5: LAPORAN BOS RAMAH LANSIA & SISTEM NOTIFIKASI REAL-TIME
+   ============================================================================ */
+
+/* Anti-bug router section (pelajaran Fase 3 & 4) */
+#page-laporan-bos.active,
+#page-notifikasi.active {
+  display: block !important;
+}
+
+/* --- Tombol Lonceng Topbar --- */
+.topbar-notif-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.topbar-notif-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.topbar-notif-btn:active {
+  transform: scale(0.96);
+}
+
+.topbar-notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.45);
+}
+
+/* --- Wrapper & Komponen Dasar Scoped Fase 5 --- */
+.bos-page-wrap,
+.notif-page-wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 12px 12px 48px;
+}
+
+.bos-hero-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bos-main-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.bos-status-bar {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.rn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.rn-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rn-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.rn-btn-primary {
+  background: #005a9c;
+  color: #ffffff;
+}
+
+.rn-btn-secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.rn-btn-sm {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.rn-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 16px;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.rn-input:focus {
+  outline: none;
+  border-color: #005a9c;
+  box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.16);
+}
+
+/* --- Filter Besar Ramah Lansia (Min. Tinggi 48px) --- */
+.bos-filter-block {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.bos-filter-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.bos-cabang-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.bos-periode-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 600px) {
+  .bos-periode-group {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.bos-cabang-btn,
+.bos-periode-btn,
+.bos-search-tipe-btn {
+  min-height: 50px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid #cbd5e1;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.bos-cabang-btn.active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+
+.bos-cabang-btn[data-cabang="korpri"].active {
+  background: #005a9c;
+  border-color: #005a9c;
+}
+
+.bos-cabang-btn[data-cabang="pringsewu"].active {
+  background: #0f766e;
+  border-color: #0f766e;
+}
+
+.bos-periode-btn.active,
+.bos-search-tipe-btn.active {
+  background: #005a9c;
+  border-color: #005a9c;
+  color: #ffffff;
+}
+
+.bos-bulan-picker {
+  margin-top: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bos-month-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* --- 7 Kartu KPI Utama (1 Kolom, Angka 24px-28px, Kontras Tinggi) --- */
+.bos-kpi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.bos-kpi-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-left: 7px solid #005a9c;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.bos-kpi-blue { border-left-color: #005a9c; }
+.bos-kpi-red { border-left-color: #dc2626; }
+.bos-kpi-green { border-left-color: #059669; }
+.bos-kpi-teal { border-left-color: #0f766e; }
+.bos-kpi-amber { border-left-color: #d97706; }
+.bos-kpi-slate { border-left-color: #334155; }
+
+.bos-kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bos-kpi-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bos-kpi-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.bos-kpi-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.bos-kpi-red .bos-kpi-value { color: #b91c1c; }
+.bos-kpi-green .bos-kpi-value { color: #047857; }
+.bos-kpi-blue .bos-kpi-value { color: #004477; }
+
+.bos-kpi-breakdown {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bos-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #334155;
+  border-bottom: 1px dashed #e2e8f0;
+  padding-bottom: 6px;
+}
+
+.bos-breakdown-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.bos-breakdown-row strong {
+  font-size: 16px;
+  color: #0f172a;
+  text-align: right;
+}
+
+.bos-row-muted {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.bos-kpi-note {
+  font-size: 14px;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 10px 12px;
+  border-radius: 10px;
+  line-height: 1.45;
+}
+
+.bos-subcard-title {
+  margin: 14px 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #92400e;
+}
+
+/* --- Pembanding 2 Cabang (Mode Gabungan) --- */
+.bos-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 560px) {
+  .bos-compare-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.bos-compare-item {
+  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.bos-compare-korpri { border-top: 4px solid #005a9c; }
+.bos-compare-pringsewu { border-top: 4px solid #0f766e; }
+
+.bos-compare-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #0f172a;
+}
+
+.bos-compare-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  padding: 3px 0;
+  color: #334155;
+}
+
+/* --- List Stok Menipis & Top 5 --- */
+.bos-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bos-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.bos-list-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bos-rank-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #005a9c;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bos-rank-red { background: #dc2626; }
+
+.bos-list-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.bos-list-sub {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.bos-list-right {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bos-mini-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #e2e8f0;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.bos-text-danger { color: #dc2626; }
+.bos-text-primary { color: #005a9c; }
+.bos-text-success { color: #059669; }
+
+.bos-empty-note {
+  font-size: 15px;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.bos-loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.bos-alert-box {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.bos-alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.bos-alert-warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+/* --- Kotak Cari & Hitung Rekap Bos --- */
+.bos-search-card {
+  background: #ffffff;
+  border: 2px solid #005a9c;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 4px 14px rgba(0, 90, 156, 0.08);
+}
+
+.bos-search-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.bos-search-header i {
+  font-size: 24px;
+  color: #005a9c;
+  margin-top: 2px;
+}
+
+.bos-search-header h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.bos-search-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.bos-search-tipe-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bos-search-input-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bos-search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.bos-search-submit {
+  min-width: 150px;
+}
+
+.bos-search-result {
+  margin-top: 16px;
+}
+
+.bos-search-summary {
+  background: #f1f5f9;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.bos-search-sum-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.bos-search-sum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.bos-sum-box {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+}
+
+.bos-sum-box span {
+  display: block;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.bos-sum-box strong {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.bos-sum-in strong { color: #059669; }
+.bos-sum-out strong { color: #dc2626; }
+.bos-sum-nota strong { color: #005a9c; }
+
+.bos-search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bos-search-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.bos-search-top,
+.bos-search-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.bos-search-date,
+.bos-search-akun {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.bos-search-ket {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 6px 0;
+}
+
+.bos-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.bos-pill-red { background: #fee2e2; color: #b91c1c; }
+.bos-pill-green { background: #d1fae5; color: #047857; }
+.bos-pill-blue { background: #dbeafe; color: #1d4ed8; }
+
+/* --- Halaman Pusat Notifikasi (#page-notifikasi) --- */
+.notif-panel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.notif-panel-head h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.notif-admin-sub {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.notif-locked-box {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: #f8fafc;
+  border: 1px dashed #94a3b8;
+  border-radius: 12px;
+  padding: 16px;
+  color: #334155;
+}
+
+.notif-locked-box i {
+  font-size: 24px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.notif-locked-box p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.notif-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.notif-pref-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.notif-pref-sub {
+  font-size: 13px;
+  color: #475569;
+}
+
+.notif-field-group {
+  margin-bottom: 14px;
+}
+
+.notif-field-group label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #1e293b;
+}
+
+.notif-help-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.notif-events-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1e3a8a;
+  margin-bottom: 14px;
+}
+
+.notif-events-info span {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.notif-action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Toggle Switch Besar Ramah Sentuh */
+.rn-switch {
+  position: relative;
+  display: inline-block;
+  width: 58px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.rn-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.rn-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s;
+  border-radius: 999px;
+}
+
+.rn-slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #ffffff;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.rn-switch input:checked + .rn-slider {
+  background-color: #059669;
+}
+
+.rn-switch input:checked + .rn-slider:before {
+  transform: translateX(26px);
+}
+
+/* Daftar Riwayat Notifikasi */
+.notif-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notif-item-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+}
+
+.notif-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.notif-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.notif-time {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.notif-item-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.notif-item-msg {
+  font-size: 14px;
+  color: #334155;
+  margin: 4px 0 6px;
+  line-height: 1.45;
+}
+
+.notif-item-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+/* Panel Admin Kelola Akses Notifikasi */
+.notif-admin-card {
+  border: 2px solid #0f172a;
+}
+
+.notif-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-user-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.admin-user-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.admin-user-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.admin-user-meta {
+  font-size: 13px;
+  color: #475569;
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+.admin-ev-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.admin-ev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.admin-user-footer {
+  display: flex;
+  justify-content: flex-end;
+}

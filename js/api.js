@@ -352,6 +352,33 @@ window.POS_API = (function () {
       clientRequestId: clientRequestId || generateClientRequestId("MTB")
     });
   }
+  // ==========================================================================
+  // WRAPPER TAMBAHAN FASE 5 (LAPORAN BOS & NOTIFIKASI REAL-TIME)
+  // ==========================================================================
+
+  function getLaporanBos(payload = {}) {
+    return request("getLaporanBos", payload, {
+      cabang: payload.cabang || undefined
+    });
+  }
+
+  function cariRekapBos(payload = {}) {
+    return request("cariRekapBos", payload, {
+      cabang: payload.cabang || undefined
+    });
+  }
+
+  function getNotifInApp(payload = {}) {
+    return request("getNotifInApp", payload);
+  }
+
+  function testNotifTelegram(payload = {}) {
+    return request("testNotifTelegram", payload);
+  }
+
+  function kelolaAksesNotifAdmin(payload = {}) {
+    return request("kelolaAksesNotifAdmin", payload);
+  }
 
   return {
     generateClientRequestId,
@@ -390,7 +417,11 @@ window.POS_API = (function () {
     getMutasiAntarCabang,
     buatMutasiAntarCabang,
     terimaMutasiAntarCabang,
-    batalMutasiAntarCabang
-
+    batalMutasiAntarCabang,
+    getLaporanBos,
+    cariRekapBos,
+    getNotifInApp,
+    testNotifTelegram,
+    kelolaAksesNotifAdmin
   };
 })();

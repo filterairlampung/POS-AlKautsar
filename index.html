@@ -229,6 +229,17 @@
             >
               <i class="fas fa-download"></i> Pasang
             </button>
+            <!-- Tombol Lonceng Notifikasi Real-Time (Fase 5) -->
+            <button
+              type="button"
+              id="btn-topbar-notif"
+              class="topbar-notif-btn"
+              title="Pusat Notifikasi"
+              aria-label="Buka Pusat Notifikasi"
+            >
+              <i class="fas fa-bell"></i>
+              <span id="topbar-notif-badge" class="topbar-notif-badge" style="display: none;">0</span>
+            </button>
           </div>
         </header>
 
@@ -898,6 +909,170 @@
             </div>
 
             <div id="mutasi-list-container" class="dm-card-list"></div>
+          </section>
+          <!-- ====================================================================== -->
+          <!-- FASE 5: HALAMAN LAPORAN BOS RAMAH LANSIA (#page-laporan-bos)           -->
+          <!-- ====================================================================== -->
+          <section id="page-laporan-bos" class="page-section">
+            <div class="bos-page-wrap">
+              <div class="bos-hero-header">
+                <div>
+                  <h2 class="bos-main-title">
+                    <i class="fas fa-chart-pie"></i> Laporan Keuangan Bos
+                  </h2>
+                  <p id="bos-status-bar" class="bos-status-bar">
+                    Memuat ringkasan keuangan...
+                  </p>
+                </div>
+                <button type="button" id="btn-bos-refresh" class="rn-btn rn-btn-secondary bos-refresh-btn">
+                  <i class="fas fa-rotate-right"></i> Perbarui
+                </button>
+              </div>
+
+              <!-- Pemilih Cabang Besar (Ramah Lansia) -->
+              <div class="bos-filter-block">
+                <div class="bos-filter-label">1. Pilih Cabang:</div>
+                <div class="bos-cabang-group">
+                  <button type="button" class="bos-cabang-btn" data-cabang="korpri">
+                    <i class="fas fa-store"></i> Korpri
+                  </button>
+                  <button type="button" class="bos-cabang-btn" data-cabang="pringsewu">
+                    <i class="fas fa-store"></i> Pringsewu
+                  </button>
+                  <button type="button" class="bos-cabang-btn active" data-cabang="all">
+                    <i class="fas fa-layer-group"></i> Gabungan
+                  </button>
+                </div>
+              </div>
+
+              <!-- Pemilih Periode 1-Klik -->
+              <div class="bos-filter-block">
+                <div class="bos-filter-label">2. Pilih Waktu:</div>
+                <div class="bos-periode-group">
+                  <button type="button" class="bos-periode-btn active" data-periode="hari_ini">
+                    Hari Ini
+                  </button>
+                  <button type="button" class="bos-periode-btn" data-periode="minggu_ini">
+                    Minggu Ini
+                  </button>
+                  <button type="button" class="bos-periode-btn" data-periode="bulan_ini">
+                    Bulan Ini
+                  </button>
+                  <button type="button" class="bos-periode-btn" data-periode="pilih_bulan">
+                    Pilih Bulan
+                  </button>
+                </div>
+
+                <div id="bos-pilih-bulan-wrap" class="bos-bulan-picker" style="display: none;">
+                  <input type="month" id="bos-input-bulan" class="rn-input bos-month-input" />
+                  <button type="button" id="btn-bos-apply-bulan" class="rn-btn rn-btn-primary">
+                    Tampilkan Bulan Ini
+                  </button>
+                </div>
+              </div>
+
+              <!-- Kontainer 7 KPI Utama (Dirender Otomatis oleh js/report_notif.js) -->
+              <div id="bos-kpi-container" class="bos-kpi-stack">
+                <div class="bos-loading-box">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <div>Menyiapkan 7 KPI Laporan Bos...</div>
+                </div>
+              </div>
+
+              <!-- Kotak Cari & Hitung Rekap Otomatis (Search Rekap Bunda) -->
+              <div class="bos-search-card">
+                <div class="bos-search-header">
+                  <i class="fas fa-magnifying-glass"></i>
+                  <div>
+                    <h3>Cari &amp; Hitung Rekap Otomatis</h3>
+                    <p>Ketik nama pelanggan, supir, barang, atau pengeluaran (misal: <b>Bayar Supir</b>, <b>Bu Parlan</b>, <b>Bensin</b>).</p>
+                  </div>
+                </div>
+
+                <div class="bos-search-tipe-group">
+                  <button type="button" class="bos-search-tipe-btn active" data-tipe="semua">
+                    Semua
+                  </button>
+                  <button type="button" class="bos-search-tipe-btn" data-tipe="pemasukan">
+                    Pemasukan Saja
+                  </button>
+                  <button type="button" class="bos-search-tipe-btn" data-tipe="pengeluaran">
+                    Pengeluaran Saja
+                  </button>
+                </div>
+
+                <div class="bos-search-input-row">
+                  <input
+                    type="text"
+                    id="bos-search-keyword"
+                    class="rn-input bos-search-input"
+                    placeholder="Ketik kata kunci di sini..."
+                    autocomplete="off"
+                  />
+                  <button type="button" id="btn-bos-search" class="rn-btn rn-btn-primary bos-search-submit">
+                    <i class="fas fa-search"></i> Cari &amp; Hitung
+                  </button>
+                </div>
+
+                <div id="bos-search-result" class="bos-search-result"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ====================================================================== -->
+          <!-- FASE 5: HALAMAN PUSAT NOTIFIKASI & KONTROL GANDA (#page-notifikasi)    -->
+          <!-- ====================================================================== -->
+          <section id="page-notifikasi" class="page-section">
+            <div class="notif-page-wrap">
+              <div class="bos-hero-header">
+                <div>
+                  <h2 class="bos-main-title">
+                    <i class="fas fa-bell"></i> Pusat Notifikasi Real-Time
+                  </h2>
+                  <p class="bos-status-bar">
+                    Peringatan transaksi, void, setoran supir, DAMIU, dan mutasi cabang (Telegram + In-App).
+                  </p>
+                </div>
+                <button type="button" id="btn-notif-refresh" class="rn-btn rn-btn-secondary">
+                  <i class="fas fa-rotate-right"></i> Muat Ulang
+                </button>
+              </div>
+
+              <!-- Panel 1: Sakelar Notifikasi Saya (Kontrol Ganda) -->
+              <div class="notif-panel-card">
+                <div class="notif-panel-head">
+                  <h3><i class="fab fa-telegram"></i> Sakelar Notifikasi Telegram Saya</h3>
+                </div>
+                <div id="notif-my-pref-body">
+                  <div class="bos-loading-box">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat status izin notifikasi...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel 2: Riwayat Notifikasi In-App (NOTIF_INAPP) -->
+              <div class="notif-panel-card">
+                <div class="notif-panel-head">
+                  <h3><i class="fas fa-clock-rotate-left"></i> Riwayat Notifikasi Terbaru</h3>
+                </div>
+                <div id="notif-history-list" class="notif-history-list">
+                  <div class="bos-loading-box">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat riwayat notifikasi...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel 3: Khusus Admin — Kelola Akses Notifikasi Tim -->
+              <div id="notif-admin-panel" class="notif-panel-card notif-admin-card" style="display: none;">
+                <div class="notif-panel-head">
+                  <h3><i class="fas fa-user-shield"></i> Kelola Akses Notifikasi Tim (Khusus Admin)</h3>
+                  <p class="notif-admin-sub">
+                    Aktifkan sakelar izin (<code>Notif_Allowed</code>) dan centang jenis kejadian yang boleh diterima setiap akun.
+                  </p>
+                </div>
+                <div id="notif-admin-list" class="notif-admin-list"></div>
+              </div>
+            </div>
           </section>
           <!-- ============================================================ -->
           <!-- PAGE KERANGKA MODUL FASE 3 - 6 (TERKONTROL RBAC)             -->

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * POS AL-KAUTSAR BUMINDO v3.1 — KONFIGURASI FRONTEND STAGING
+ * POS AL-KAUTSAR BUMINDO v3.3 — KONFIGURASI FRONTEND STAGING
  * File: js/config.js
  * ============================================================================
  * ATURAN KEAMANAN: DILARANG menyimpan API Key, Password, atau Spreadsheet ID
@@ -14,7 +14,7 @@ window.POS_CONFIG = (function () {
   const GAS_WEB_APP_URL =
     "https://script.google.com/macros/s/AKfycbznGxMHlmgwmbo_-X1aiL79ILHtktME6q4NXgFfvfdzYterPTc7oktPKgpA1t6XmZtP1w/exec";
 
-  const APP_VERSION = "3.2.0-staging";
+  const APP_VERSION = "3.3.0-staging";
   const SESSION_STORAGE_KEY = "pos_alkautsar_v3_session";
   const IOS_BANNER_DISMISS_KEY = "pos_alkautsar_v3_ios_banner_dismissed";
   const OFFLINE_QUEUE_STORAGE_KEY = "pos_alkautsar_v3_offline_queue";
@@ -80,7 +80,7 @@ window.POS_CONFIG = (function () {
     ]
   };
 
-  // Matriks Menu Sidebar & Halaman (Fase 2 & 3 Aktif + Fase 4–6 Kerangka Terstruktur)
+  // Matriks Menu Sidebar & Halaman (Fase 2–5 Aktif + Fase 6 Kerangka Terstruktur)
   const MENU_ITEMS = [
     // --- FASE 2: OPERASIONAL RITEL INTI (AKTIF) ---
     {
@@ -195,6 +195,8 @@ window.POS_CONFIG = (function () {
       phase: 4,
       implemented: true
     },
+
+    // --- FASE 5: LAPORAN BOS RAMAH LANSIA & NOTIFIKASI REAL-TIME (AKTIF) ---
     {
       id: "page-laporan-bos",
       label: "Laporan Bos",
@@ -202,20 +204,7 @@ window.POS_CONFIG = (function () {
       group: "Analitik & Sistem",
       roles: ["Bos", "Admin"],
       phase: 5,
-      implemented: false,
-      placeholderDesc:
-        "Ringkasan omzet, laba bersih, posisi 3 akun kas (Kas Laci, Rekening Toko, Rekening Bunda), dan pencarian kata kunci dengan antarmuka ramah orang tua/lansia."
-    },
-    {
-      id: "page-inbox-paste",
-      label: "Inbox Smart Paste",
-      icon: "fa-paste",
-      group: "Analitik & Sistem",
-      roles: ["Manajer", "Bos", "Admin"],
-      phase: 5,
-      implemented: false,
-      placeholderDesc:
-        "Konversi cepat teks pesanan dari grup WhatsApp menjadi draft transaksi, tugas supir, dan jadwal Google Calendar."
+      implemented: true
     },
     {
       id: "page-notifikasi",
@@ -224,9 +213,20 @@ window.POS_CONFIG = (function () {
       group: "Analitik & Sistem",
       roles: ["Karyawan", "Supir", "Manajer", "Bos", "Admin"],
       phase: 5,
+      implemented: true
+    },
+
+    // --- FASE 6: INTEGRASI GEMINI AI (SMART PASTE & ASISTEN AI) ---
+    {
+      id: "page-inbox-paste",
+      label: "Inbox Smart Paste",
+      icon: "fa-paste",
+      group: "Analitik & Sistem",
+      roles: ["Manajer", "Bos", "Admin"],
+      phase: 6,
       implemented: false,
       placeholderDesc:
-        "Pusat peringatan stok menipis, transaksi void, pengajuan mutasi cabang, serta pengaturan preferensi notifikasi Telegram (Kontrol Ganda)."
+        "Konversi cepat teks pesanan dari grup WhatsApp menjadi draft transaksi, tugas supir, dan jadwal Google Calendar menggunakan Gemini AI."
     },
     {
       id: "page-asisten-ai",

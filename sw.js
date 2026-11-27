@@ -5,7 +5,7 @@
  * ============================================================================
  */
 
-const CACHE_NAME = "pos-alkautsar-v3.2.2";
+const CACHE_NAME = "pos-alkautsar-v3.3.0";
 
 const STATIC_ASSETS = [
   "./",
@@ -19,6 +19,7 @@ const STATIC_ASSETS = [
   "./js/receipt.js",
   "./js/driver_customer.js",
   "./js/damiu_mutasi.js",
+  "./js/report_notif.js",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
