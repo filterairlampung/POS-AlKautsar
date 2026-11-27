@@ -100,6 +100,27 @@ window.POS_API = (function () {
         };
       }
 
+      // Normalisasi properti sukses/ok/status agar 100% sinkron dengan respSukses_() backend
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.sukses !== "boolean") {
+          if (typeof parsed.ok === "boolean") {
+            parsed.sukses = parsed.ok;
+          } else if (typeof parsed.success === "boolean") {
+            parsed.sukses = parsed.success;
+          } else if (typeof parsed.status === "string") {
+            const st = parsed.status.toLowerCase();
+            parsed.sukses = st === "sukses" || st === "success" || st === "ok";
+          } else {
+            parsed.sukses = false;
+          }
+        }
+        if (parsed.pesan === undefined && parsed.message !== undefined) {
+          parsed.pesan = parsed.message;
+        }
+        if (parsed.code === undefined && parsed.errorCode !== undefined) {
+          parsed.code = parsed.errorCode;
+        }
+      }
       // Interceptor sesi tidak valid / kedaluwarsa -> paksa logout bersih
       if (
         !isPublic &&
