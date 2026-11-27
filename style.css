@@ -2588,3 +2588,196 @@ td {
 #page-mutasi-cabang.active {
   display: block !important;
 }
+/* ==========================================================================
+   PATCH UI FASE 4: RAPINKAN HEADER, TOMBOL, INPUT & MODAL
+   ========================================================================== */
+#page-damiu,
+#page-mutasi-cabang {
+  padding-bottom: 32px;
+}
+
+#page-damiu .dm-page-header,
+#page-mutasi-cabang .dm-page-header {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+#page-damiu .dm-page-header h2,
+#page-mutasi-cabang .dm-page-header h2 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#page-damiu .dm-page-header p,
+#page-mutasi-cabang .dm-page-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Styling Tombol Khusus Halaman & Modal Fase 4 */
+#page-damiu button,
+#page-mutasi-cabang button,
+#modal-proyek-damiu button,
+#modal-detail-damiu button,
+#modal-reimburse-damiu button,
+#modal-buat-mutasi button,
+#modal-terima-mutasi button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+#page-damiu .btn-primary,
+#page-mutasi-cabang .btn-primary,
+#modal-proyek-damiu .btn-primary,
+#modal-detail-damiu .btn-primary,
+#modal-reimburse-damiu .btn-primary,
+#modal-buat-mutasi .btn-primary,
+#modal-terima-mutasi .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary-color, #005A9C);
+  color: #ffffff;
+  border: 1px solid var(--primary-color, #005A9C);
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#page-damiu .btn-primary:hover,
+#page-mutasi-cabang .btn-primary:hover,
+#modal-proyek-damiu .btn-primary:hover,
+#modal-detail-damiu .btn-primary:hover,
+#modal-reimburse-damiu .btn-primary:hover,
+#modal-buat-mutasi .btn-primary:hover,
+#modal-terima-mutasi .btn-primary:hover {
+  filter: brightness(0.92);
+}
+
+#page-damiu .btn-secondary,
+#page-mutasi-cabang .btn-secondary,
+#modal-proyek-damiu .btn-secondary,
+#modal-detail-damiu .btn-secondary,
+#modal-reimburse-damiu .btn-secondary,
+#modal-buat-mutasi .btn-secondary,
+#modal-terima-mutasi .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#page-damiu .btn-secondary:hover,
+#page-mutasi-cabang .btn-secondary:hover,
+#modal-proyek-damiu .btn-secondary:hover,
+#modal-detail-damiu .btn-secondary:hover,
+#modal-reimburse-damiu .btn-secondary:hover,
+#modal-buat-mutasi .btn-secondary:hover,
+#modal-terima-mutasi .btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+#page-damiu .btn-sm,
+#page-mutasi-cabang .btn-sm,
+#modal-detail-damiu .btn-sm {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+#page-damiu .btn-outline,
+#page-mutasi-cabang .btn-outline,
+#modal-detail-damiu .btn-outline {
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#page-damiu .btn-danger-outline,
+#page-mutasi-cabang .btn-danger-outline,
+#modal-detail-damiu .btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#page-damiu .btn-danger-outline:hover,
+#page-mutasi-cabang .btn-danger-outline:hover,
+#modal-detail-damiu .btn-danger-outline:hover {
+  background: #fef2f2;
+}
+
+/* Rapikan Filter Bar & Input */
+#page-damiu .dm-filter-bar {
+  align-items: center;
+}
+
+#page-damiu .dm-input,
+#page-mutasi-cabang .dm-input,
+#modal-proyek-damiu .dm-input,
+#modal-detail-damiu .dm-input,
+#modal-reimburse-damiu .dm-input,
+#modal-buat-mutasi .dm-input,
+#modal-terima-mutasi .dm-input {
+  box-sizing: border-box;
+  height: 38px;
+  font-size: 13px;
+}
+
+#modal-detail-damiu input[type="file"].dm-input {
+  height: auto;
+  padding: 6px 10px;
+}
+
+/* Rapikan Modal Header & Close Button */
+#modal-proyek-damiu .modal-header,
+#modal-detail-damiu .modal-header,
+#modal-reimburse-damiu .modal-header,
+#modal-buat-mutasi .modal-header,
+#modal-terima-mutasi .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+#modal-proyek-damiu .modal-close,
+#modal-detail-damiu .modal-close,
+#modal-reimburse-damiu .modal-close,
+#modal-buat-mutasi .modal-close,
+#modal-terima-mutasi .modal-close {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1;
+  color: #475569;
+}

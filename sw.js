@@ -5,7 +5,7 @@
  * ============================================================================
  */
 
-const CACHE_NAME = "pos-alkautsar-v3.2.0";
+const CACHE_NAME = "pos-alkautsar-v3.2.2";
 
 const STATIC_ASSETS = [
   "./",
