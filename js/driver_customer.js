@@ -408,12 +408,12 @@ window.POS_DRIVER_CUSTOMER = (function () {
   function openOfflineQueueModal() {
     renderOfflineQueueModalList();
     const modal = document.getElementById("modal-offline-queue");
-    if (modal) modal.classList.add("show");
+    if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
 
   function closeOfflineQueueModal() {
     const modal = document.getElementById("modal-offline-queue");
-    if (modal) modal.classList.remove("show");
+    if (modal) { modal.classList.remove("show", "active"); modal.style.display = "none"; }
   }
 
   function renderOfflineQueueModalList() {
@@ -589,12 +589,12 @@ window.POS_DRIVER_CUSTOMER = (function () {
     const btnDel = document.getElementById("btn-hapus-pelanggan");
     if (btnDel) btnDel.style.display = existing ? "inline-flex" : "none";
 
-    if (modal) modal.classList.add("show");
+    if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
 
   function closePelangganModal() {
     const modal = document.getElementById("modal-pelanggan");
-    if (modal) modal.classList.remove("show");
+    if (modal) { modal.classList.remove("show", "active"); modal.style.display = "none"; }
   }
 
   async function submitPelangganForm(ev) {
@@ -791,12 +791,12 @@ window.POS_DRIVER_CUSTOMER = (function () {
     document.getElementById("lunasi-keterangan").value = "";
 
     const modal = document.getElementById("modal-lunasi-piutang");
-    if (modal) modal.classList.add("show");
+    if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
 
   function closeLunasiPiutangModal() {
     const modal = document.getElementById("modal-lunasi-piutang");
-    if (modal) modal.classList.remove("show");
+    if (modal) { modal.classList.remove("show", "active"); modal.style.display = "none"; }
   }
 
   function setLunasiPenuh() {
@@ -1080,12 +1080,12 @@ window.POS_DRIVER_CUSTOMER = (function () {
     renderMuatanDraft();
 
     const modal = document.getElementById("modal-mulai-antar");
-    if (modal) modal.classList.add("show");
+    if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
 
   function closeMulaiAntarModal() {
     const modal = document.getElementById("modal-mulai-antar");
-    if (modal) modal.classList.remove("show");
+    if (modal) { modal.classList.remove("show", "active"); modal.style.display = "none"; }
   }
 
   function onMulaiPelangganPicked() {
@@ -1284,12 +1284,12 @@ window.POS_DRIVER_CUSTOMER = (function () {
     recalcSelesaiTotal();
 
     const modal = document.getElementById("modal-selesai-antar");
-    if (modal) modal.classList.add("show");
+    if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
 
   function closeSelesaiModal() {
     const modal = document.getElementById("modal-selesai-antar");
-    if (modal) modal.classList.remove("show");
+    if (modal) { modal.classList.remove("show", "active"); modal.style.display = "none"; }
   }
 
   function collectSelesaiItems() {
@@ -1438,12 +1438,12 @@ window.POS_DRIVER_CUSTOMER = (function () {
     document.getElementById("verif-catatan").value = "";
 
     const modal = document.getElementById("modal-verifikasi-supir");
-    if (modal) modal.classList.add("show");
+    if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
 
   function closeVerifikasiModal() {
     const modal = document.getElementById("modal-verifikasi-supir");
-    if (modal) modal.classList.remove("show");
+    if (modal) { modal.classList.remove("show", "active"); modal.style.display = "none"; }
   }
 
   async function submitVerifikasiSetoran(ev) {
