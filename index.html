@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>POS Al-Kautsar Bumindo v3.0</title>
+
+  <!-- PWA & Tema Dinamis -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#005A9C">
+  <meta name="description" content="Sistem POS Multi-Cabang Al-Kautsar Filter Air Bumindo v3.0 (Korpri & Pringsewu)">
+
+  <!-- Optimalisasi PWA Safari iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Al-Kautsar POS">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+
+  <!-- Font & Ikon -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Stylesheet Utama v3.0 -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body data-branch="korpri">
+  <div class="app-root">
+
+    <!-- ================================================================== -->
+    <!-- BANNER PANDUAN PWA SAFARI iOS (TAMPIL OTOMATIS DI iOS NON-STANDALONE) -->
+    <!-- ================================================================== -->
+    <div id="ios-pwa-banner" class="ios-pwa-banner no-print" style="display: none;">
+      <div class="ios-pwa-icon">
+        <i class="fas fa-mobile-screen-button"></i>
+      </div>
+      <div class="ios-pwa-text">
+        <strong>Pasang POS di Layar Utama iPhone/iPad</strong>
+        <span>Tap tombol <b>Share</b> (<i class="fas fa-arrow-up-from-bracket"></i>) di bawah Safari &rarr; pilih <b>Add to Home Screen</b>.</span>
+      </div>
+      <button type="button" class="ios-pwa-close" onclick="POS_AUTH.dismissIosBanner()" aria-label="Tutup panduan">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- TOAST NOTIFIKASI SISTEM                                            -->
+    <!-- ================================================================== -->
+    <div id="toast-sistem" class="toast-sistem no-print" role="status" aria-live="polite">
+      <i class="fas fa-circle-info"></i>
+      <span id="toast-sistem-text">Memuat...</span>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- HALAMAN LOGIN (2 LANGKAH: KREDENSIAL -> PILIH PERAN & CABANG)      -->
+    <!-- ================================================================== -->
+    <section id="halaman-login">
+      <div class="login-container">
+        <div class="login-logo-icon">
+          <i class="fas fa-droplet"></i>
+        </div>
+        <h2>POS Al-Kautsar v3.0</h2>
+        <p class="login-subtitle">Single Codebase Multi-Cabang &bull; Korpri &amp; Pringsewu</p>
+
+        <!-- LANGKAH 1: USERNAME & PASSWORD -->
+        <div id="login-step-1">
+          <form id="form-login-step1" autocomplete="on">
+            <div class="input-group">
+              <label for="login-username">Username</label>
+              <input
+                type="text"
+                id="login-username"
+                name="username"
+                placeholder="Masukkan username"
+                autocomplete="username"
+                required
+              >
+            </div>
+
+            <div class="input-group">
+              <label for="login-password">Password</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="login-password"
+                  name="password"
+                  placeholder="Masukkan password"
+                  autocomplete="current-password"
+                  required
+                >
+                <button
+                  type="button"
+                  class="btn-toggle-pass"
+                  onclick="POS_AUTH.togglePasswordVisibility()"
+                  aria-label="Tampilkan atau sembunyikan password"
+                >
+                  <i id="login-pass-icon" class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="btn-login-submit" class="btn-login">
+              <i class="fas fa-sign-in-alt"></i> Masuk
+            </button>
+          </form>
+        </div>
+
+        <!-- LANGKAH 2: PILIH PERAN & CABANG (HANYA JIKA ALLOWED > 1) -->
+        <div id="login-step-2" style="display: none;">
+          <p id="login-step2-greeting" class="login-step2-greeting"></p>
+          <form id="form-login-step2">
+            <div class="input-group">
+              <label for="login-select-role">Masuk Sebagai Peran</label>
+              <select id="login-select-role" required></select>
+            </div>
+
+            <div class="input-group">
+              <label for="login-select-branch">Cabang Aktif</label>
+              <select id="login-select-branch" required></select>
+            </div>
+
+            <button type="submit" id="btn-context-confirm" class="btn-login">
+              <i class="fas fa-arrow-right"></i> Lanjut ke Dashboard
+            </button>
+            <button type="button" class="btn-secondary-full" onclick="POS_AUTH.cancelContextStep()">
+              <i class="fas fa-arrow-left"></i> Ganti Akun
+            </button>
+          </form>
+        </div>
+
+        <div id="pesan-error" style="display: none;"></div>
+        <div class="login-env-badge">Staging v3.0 &bull; RBAC 5 Peran</div>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- DASHBOARD APLIKASI UTAMA                                           -->
+    <!-- ================================================================== -->
+    <div id="dashboard-app" style="display: none;">
+
+      <!-- OVERLAY SIDEBAR MOBILE -->
+      <div id="sidebar-overlay" class="overlay no-print" onclick="POS_AUTH.toggleSidebar(false)"></div>
+
+      <!-- SIDEBAR NAVIGASI (RBAC 5 PERAN) -->
+      <aside id="app-sidebar" class="sidebar no-print">
+        <div class="sidebar-header">
+          <div class="sidebar-brand-title">
+            <i class="fas fa-droplet"></i> Al-Kautsar POS
+          </div>
+          <div id="sidebar-branch-label" class="sidebar-branch-label">Cabang Korpri</div>
+        </div>
+
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="sidebar-user-meta">
+            <div id="sidebar-user-name" class="sidebar-user-name">-</div>
+            <span id="sidebar-user-role" class="sidebar-user-role-pill">-</span>
+          </div>
+        </div>
+
+        <ul id="sidebar-menu-list" class="sidebar-menu"></ul>
+      </aside>
+
+      <!-- KONTEN UTAMA -->
+      <div class="main-wrapper">
+
+        <!-- TOPBAR / HEADER DENGAN ROLE SWITCHER & BRANCH SWITCHER -->
+        <header class="topbar no-print">
+          <div class="topbar-left">
+            <i class="fas fa-bars" onclick="POS_AUTH.toggleSidebar()" aria-label="Buka menu"></i>
+            <button
+              type="button"
+              id="btn-topbar-back"
+              class="btn-topbar-nav"
+              style="display: none;"
+              onclick="POS_AUTH.navigateTo('page-home')"
+            >
+              <i class="fas fa-arrow-left"></i> <span>Beranda</span>
+            </button>
+            <div class="topbar-title-group">
+              <span id="topbar-page-title" class="topbar-title">Beranda</span>
+              <span id="topbar-branch-badge" class="topbar-branch-badge">Korpri</span>
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <!-- Role Switcher (Dropdown jika >1 peran, Badge jika 1 peran) -->
+            <select
+              id="header-role-switcher"
+              class="topbar-select"
+              style="display: none;"
+              onchange="POS_AUTH.onRoleSwitch(this.value)"
+              aria-label="Ganti Peran Aktif"
+            ></select>
+            <span id="header-role-static" class="topbar-static-pill" style="display: none;"></span>
+
+            <!-- Branch Switcher (Dropdown jika >1 cabang, Badge jika 1 cabang) -->
+            <select
+              id="header-branch-switcher"
+              class="topbar-select"
+              style="display: none;"
+              onchange="POS_AUTH.onBranchSwitch(this.value)"
+              aria-label="Ganti Cabang Aktif"
+            ></select>
+            <span id="header-branch-static" class="topbar-static-pill" style="display: none;"></span>
+
+            <!-- Tombol Refresh Data -->
+            <button
+              type="button"
+              id="btn-topbar-refresh"
+              class="btn-topbar-refresh"
+              onclick="POS_RETAIL.refreshCurrentBranch()"
+              title="Muat ulang data cabang"
+            >
+              <i class="fas fa-rotate"></i> <span>Refresh</span>
+            </button>
+
+            <!-- Tombol Install PWA (Android/Desktop Chrome) -->
+            <button
+              type="button"
+              id="btn-install-pwa"
+              class="btn-install-top"
+              style="display: none;"
+              onclick="POS_AUTH.triggerInstallPwa()"
+            >
+              <i class="fas fa-download"></i> Pasang
+            </button>
+          </div>
+        </header>
+
+        <!-- AREA KONTEN HALAMAN -->
+        <main class="content-area">
+
+          <!-- BANNER PENJAGA MODE GABUNGAN SAAT MEMBUKA MENU OPERASIONAL -->
+          <div id="operational-branch-guard" class="branch-guard-banner no-print" style="display: none;">
+            <div class="branch-guard-text">
+              <i class="fas fa-code-branch"></i>
+              <div>
+                <strong>Anda sedang di Mode Gabungan.</strong>
+                <span>Pilih salah satu cabang operasional untuk input transaksi, kas, atau stok:</span>
+              </div>
+            </div>
+            <div class="branch-guard-actions">
+              <button type="button" class="btn-guard-branch btn-korpri" onclick="POS_AUTH.onBranchSwitch('korpri')">
+                Buka Korpri
+              </button>
+              <button type="button" class="btn-guard-branch btn-pringsewu" onclick="POS_AUTH.onBranchSwitch('pringsewu')">
+                Buka Pringsewu
+              </button>
+            </div>
+          </div>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 1: BERANDA (HOME)                                       -->
+          <!-- ============================================================ -->
+          <section id="page-home" class="page-section active">
+            <div class="welcome-banner">
+              <div>
+                Halo, <span id="home-welcome-name">-</span>
+                <small class="welcome-role-tag">(<b id="home-welcome-role">-</b>)</small>
+              </div>
+              <div id="home-branch-status" class="welcome-branch-sub">Memuat data cabang...</div>
+            </div>
+
+            <!-- Kartu Ringkasan Cepat -->
+            <div class="home-stats-grid">
+              <div class="stat-mini-card">
+                <div class="stat-mini-label">Produk Aktif</div>
+                <div id="home-stat-produk" class="stat-mini-val">-</div>
+              </div>
+              <div class="stat-mini-card stat-warning">
+                <div class="stat-mini-label">Stok Menipis</div>
+                <div id="home-stat-menipis" class="stat-mini-val">-</div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="stat-mini-label">Pelanggan</div>
+                <div id="home-stat-pelanggan" class="stat-mini-val">-</div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="stat-mini-label">Harga Khusus</div>
+                <div id="home-stat-khusus" class="stat-mini-val">-</div>
+              </div>
+            </div>
+
+            <!-- Alert Stok Menipis Collapsible -->
+            <div id="alert-stok-home" class="alert-stok" style="display: none;">
+              <div class="alert-stok-header" onclick="POS_RETAIL.toggleAlertStok()">
+                <div class="alert-stok-title">
+                  <i class="fas fa-triangle-exclamation"></i>
+                  <span>Peringatan Stok Menipis (<span id="alert-stok-count">0</span> item)</span>
+                </div>
+                <i id="alert-stok-chevron" class="fas fa-chevron-down"></i>
+              </div>
+              <div id="alert-stok-body" class="alert-stok-body collapsed">
+                <ul id="alert-stok-list"></ul>
+              </div>
+            </div>
+
+            <!-- Grid Menu Cepat Sesuai Peran -->
+            <div id="home-menu-grid" class="menu-grid"></div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 2: KASIR                                                -->
+          <!-- ============================================================ -->
+          <section id="page-kasir" class="page-section">
+            <div class="kasir-container">
+              <div class="kasir-toolbar">
+                <input
+                  type="search"
+                  id="kasir-search"
+                  class="search-box"
+                  placeholder="Cari nama barang atau kode..."
+                  oninput="POS_RETAIL.renderKasirProduk()"
+                >
+                <div id="kasir-chip-container" class="chip-container"></div>
+              </div>
+
+              <div id="kasir-produk-list" class="produk-list">
+                <p class="empty-state-text">Memuat daftar produk...</p>
+              </div>
+
+              <!-- Floating Bar Keranjang -->
+              <div class="keranjang-bar no-print">
+                <div class="keranjang-info">
+                  <h3 id="kasir-total-item">0 item di keranjang</h3>
+                  <h2 id="kasir-total-harga">Rp 0</h2>
+                </div>
+                <div class="keranjang-bar-actions">
+                  <button
+                    type="button"
+                    class="btn-reset-cart"
+                    onclick="POS_RETAIL.clearCart()"
+                    title="Kosongkan keranjang"
+                  >
+                    <i class="fas fa-trash-can"></i>
+                  </button>
+                  <button type="button" class="btn-bayar" onclick="POS_RETAIL.openCheckoutModal()">
+                    Bayar <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 3: HARGA KHUSUS PELANGGAN                               -->
+          <!-- ============================================================ -->
+          <section id="page-harga-khusus" class="page-section">
+            <div class="info-banner-blue">
+              <i class="fas fa-circle-info"></i>
+              Harga khusus otomatis tersimpan &amp; diperbarui setiap kali kasir mengubah harga item untuk pelanggan terdaftar (selain "Umum").
+            </div>
+
+            <div class="filter-bar">
+              <input
+                type="search"
+                id="khusus-search"
+                placeholder="Cari nama pelanggan atau nama barang..."
+                oninput="POS_RETAIL.renderHargaKhusus()"
+              >
+            </div>
+
+            <div id="khusus-list-container">
+              <p class="empty-state-text">Memuat daftar harga khusus...</p>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 4: ARUS KAS & TUTUP KAS LACI                            -->
+          <!-- ============================================================ -->
+          <section id="page-arus-kas" class="page-section">
+            <div class="two-col-grid">
+              <!-- Form Catat Arus Kas -->
+              <div class="form-card">
+                <h3><i class="fas fa-wallet"></i> Catat Arus Kas</h3>
+                <form id="form-arus-kas" onsubmit="POS_RETAIL.submitArusKas(event)">
+                  <div class="input-group">
+                    <label for="kas-kategori">Kategori</label>
+                    <select id="kas-kategori" onchange="POS_RETAIL.populateCoaOptions()" required>
+                      <option value="Pengeluaran">Pengeluaran</option>
+                      <option value="Pemasukan">Pemasukan</option>
+                    </select>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="kas-akun-kas">Akun Kas</label>
+                    <select id="kas-akun-kas" required></select>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="kas-kode-coa">Kode Akun (COA)</label>
+                    <select id="kas-kode-coa" required></select>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="kas-jenis">Jenis Transaksi</label>
+                    <input
+                      type="text"
+                      id="kas-jenis"
+                      placeholder="Contoh: Operasional, Bensin, Setoran Bunda"
+                      required
+                    >
+                  </div>
+
+                  <div class="input-group">
+                    <label for="kas-nominal">Nominal (Rp)</label>
+                    <input
+                      type="number"
+                      id="kas-nominal"
+                      min="1"
+                      step="1"
+                      placeholder="Contoh: 50000"
+                      required
+                    >
+                  </div>
+
+                  <div class="input-group">
+                    <label for="kas-tanggal">Tanggal (Kosongkan = Hari Ini WIB)</label>
+                    <input type="date" id="kas-tanggal">
+                  </div>
+
+                  <div class="input-group">
+                    <label for="kas-keterangan">Keterangan Detail</label>
+                    <textarea
+                      id="kas-keterangan"
+                      rows="2"
+                      placeholder="Tulis rincian pemasukan/pengeluaran..."
+                      required
+                    ></textarea>
+                  </div>
+
+                  <button type="submit" id="btn-simpan-kas" class="btn-simpan-trx">
+                    <i class="fas fa-floppy-disk"></i> Simpan Arus Kas
+                  </button>
+                </form>
+              </div>
+
+              <!-- Kartu Tutup Kas Harian (Khusus Kas Laci) -->
+              <div class="form-card">
+                <h3><i class="fas fa-vault"></i> Tutup Kas Harian (Kas Laci)</h3>
+                <div class="info-banner-yellow">
+                  <i class="fas fa-shield-halved"></i>
+                  Tutup Kas memindahkan saldo akhir <b>Kas Laci</b> ke hari berikutnya sebagai <i>Saldo Pindahan</i>. Dilengkapi proteksi anti-tutup-kas ganda di server.
+                </div>
+
+                <form id="form-tutup-kas" onsubmit="POS_RETAIL.submitTutupKas(event)">
+                  <div class="input-group">
+                    <label for="tutup-kas-tanggal">Tanggal yang Ditutup (Kosongkan = Hari Ini WIB)</label>
+                    <input type="date" id="tutup-kas-tanggal">
+                  </div>
+
+                  <button type="submit" id="btn-tutup-kas" class="btn-tutup-kas">
+                    <i class="fas fa-lock"></i> Proses Tutup Kas Laci
+                  </button>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 5: MUTASI STOK (MASUK / KELUAR BATCH)                   -->
+          <!-- ============================================================ -->
+          <section id="page-mutasi-stok" class="page-section">
+            <div class="form-card form-card-wide">
+              <div class="restock-header-bar">
+                <h3><i class="fas fa-boxes-stacked"></i> Mutasi Stok Barang</h3>
+                <span class="badge stok">Mode Batch</span>
+              </div>
+
+              <!-- Informasi Global Mutasi -->
+              <div class="mutasi-info-box">
+                <div class="grid-2-inputs">
+                  <div class="input-group">
+                    <label for="mutasi-jenis">Jenis Mutasi</label>
+                    <select id="mutasi-jenis" onchange="POS_RETAIL.onMutasiJenisChange()">
+                      <option value="MASUK">Barang Masuk (Restock +)</option>
+                      <option value="KELUAR">Barang Keluar (Pemakaian / Rusak -)</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label for="mutasi-tanggal">Tanggal (Kosongkan = Hari Ini)</label>
+                    <input type="date" id="mutasi-tanggal">
+                  </div>
+                </div>
+
+                <div class="grid-2-inputs">
+                  <div class="input-group">
+                    <label for="mutasi-penerima">Penerima / Penanggung Jawab</label>
+                    <input type="text" id="mutasi-penerima" placeholder="Nama staf / supir">
+                  </div>
+                  <div class="input-group">
+                    <label for="mutasi-ket-global">Keterangan Umum <span id="mutasi-ket-req" style="color: var(--red-delete); display: none;">(Wajib)</span></label>
+                    <input type="text" id="mutasi-ket-global" placeholder="Contoh: Kiriman Supplier / Barang Rusak">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tambah Item ke Daftar Batch -->
+              <div class="mutasi-item-box">
+                <div class="input-group">
+                  <label for="mutasi-barang-select">Pilih Barang</label>
+                  <select id="mutasi-barang-select"></select>
+                </div>
+
+                <div class="satuan-row">
+                  <div>
+                    <label class="sub-label" for="mutasi-satuan-mode">Satuan Input</label>
+                    <select id="mutasi-satuan-mode" onchange="POS_RETAIL.updateMutasiPreview()">
+                      <option value="Pcs">Pcs / Satuan</option>
+                      <option value="Dus">Dus / Karton</option>
+                      <option value="Bal">Bal / Sak</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="sub-label" for="mutasi-qty-input">Jumlah</label>
+                    <input
+                      type="number"
+                      id="mutasi-qty-input"
+                      min="1"
+                      value="1"
+                      oninput="POS_RETAIL.updateMutasiPreview()"
+                    >
+                  </div>
+                  <div id="mutasi-konversi-wrap" style="display: none;">
+                    <label class="sub-label" for="mutasi-isi-per-satuan">Isi Pcs / Satuan</label>
+                    <input
+                      type="number"
+                      id="mutasi-isi-per-satuan"
+                      min="1"
+                      value="1"
+                      oninput="POS_RETAIL.updateMutasiPreview()"
+                    >
+                  </div>
+                </div>
+
+                <div class="preview-pcs-box">
+                  Total Mutasi Item: <span id="mutasi-preview-pcs">1</span> Pcs
+                </div>
+
+                <button type="button" class="btn-tambah-item-batch" onclick="POS_RETAIL.addMutasiItem()">
+                  <i class="fas fa-plus"></i> Tambah ke Daftar Batch
+                </button>
+              </div>
+
+              <!-- Daftar Batch -->
+              <div id="mutasi-batch-list" class="mutasi-table-box">
+                <p class="empty-mutasi-text">Belum ada barang di daftar mutasi.</p>
+              </div>
+
+              <button
+                type="button"
+                id="btn-simpan-mutasi"
+                class="btn-simpan-trx"
+                style="margin-top: 14px;"
+                onclick="POS_RETAIL.submitMutasiStok()"
+              >
+                <i class="fas fa-check-circle"></i> Simpan Semua Mutasi Stok
+              </button>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 6: RIWAYAT TRANSAKSI & ARUS KAS (+ SOFT-DELETE VOID)    -->
+          <!-- ============================================================ -->
+          <section id="page-riwayat" class="page-section">
+            <div id="riwayat-backend-notice" class="info-banner-yellow" style="display: none;"></div>
+
+            <div class="tabs-container">
+              <div id="tab-btn-trx" class="tab-btn active" onclick="POS_RETAIL.switchRiwayatTab('trx')">
+                <i class="fas fa-receipt"></i> Riwayat Transaksi
+              </div>
+              <div id="tab-btn-kas" class="tab-btn" onclick="POS_RETAIL.switchRiwayatTab('kas')">
+                <i class="fas fa-money-bill-transfer"></i> Riwayat Arus Kas
+              </div>
+            </div>
+
+            <div class="filter-bar filter-bar-box">
+              <input type="date" id="riwayat-tgl-mulai" title="Tanggal mulai">
+              <input type="date" id="riwayat-tgl-akhir" title="Tanggal akhir">
+              <input
+                type="search"
+                id="riwayat-search"
+                placeholder="Cari ID, pelanggan, atau keterangan..."
+                oninput="POS_RETAIL.renderRiwayatTables()"
+              >
+              <button type="button" class="btn-aksi btn-filter-reload" onclick="POS_RETAIL.loadRiwayatOperasional()">
+                <i class="fas fa-magnifying-glass"></i> Muat
+              </button>
+            </div>
+
+            <div id="tab-riwayat-trx" class="tab-content active">
+              <div id="riwayat-trx-container" class="rincian-table-wrapper">
+                <p class="empty-state-text">Memuat riwayat transaksi...</p>
+              </div>
+            </div>
+
+            <div id="tab-riwayat-kas" class="tab-content">
+              <div id="riwayat-kas-container" class="rincian-table-wrapper">
+                <p class="empty-state-text">Memuat riwayat arus kas...</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 7: PENGATURAN STRUK                                     -->
+          <!-- ============================================================ -->
+          <section id="page-pengaturan-struk" class="page-section">
+            <div class="form-card">
+              <h3><i class="fas fa-receipt"></i> Pengaturan Header &amp; Footer Struk</h3>
+              <form id="form-pengaturan-struk" onsubmit="POS_RETAIL.submitPengaturanStruk(event)">
+                <div class="input-group">
+                  <label for="set-nama-toko">Nama Toko / Cabang di Struk</label>
+                  <input type="text" id="set-nama-toko" placeholder="AL-KAUTSAR FILTER AIR" required>
+                </div>
+
+                <div class="input-group">
+                  <label for="set-alamat-toko">Alamat Toko</label>
+                  <textarea id="set-alamat-toko" rows="2" placeholder="Jl. ..."></textarea>
+                </div>
+
+                <div class="input-group">
+                  <label for="set-telp-toko">No. WhatsApp / Telepon</label>
+                  <input type="text" id="set-telp-toko" placeholder="08xx-xxxx-xxxx">
+                </div>
+
+                <div class="input-group">
+                  <label for="set-footer-struk">Catatan Footer Struk</label>
+                  <textarea id="set-footer-struk" rows="2" placeholder="Terima kasih telah berbelanja..."></textarea>
+                </div>
+
+                <button type="submit" id="btn-simpan-pengaturan" class="btn-simpan-trx">
+                  <i class="fas fa-floppy-disk"></i> Simpan Pengaturan Struk
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE 8: CETAK STRUK HIBRIDA (ANDROID + iOS)                  -->
+          <!-- ============================================================ -->
+          <section id="page-struk" class="page-section">
+            <div class="struk-card-wrapper">
+              <div class="struk-top-meta no-print">
+                <span id="struk-os-badge" class="badge stok">Mendeteksi perangkat...</span>
+              </div>
+
+              <!-- Area Struk Thermal 58mm -->
+              <div id="tampilan-struk" class="area-struk"></div>
+
+              <!-- Tombol Aksi Android (BT + RawBT + Print + WA) -->
+              <div id="struk-actions-android" class="struk-actions no-print" style="display: none;">
+                <button type="button" class="btn-cetak-bt" onclick="POS_RECEIPT.printBluetoothEscPos()">
+                  <i class="fab fa-bluetooth-b"></i> Cetak Printer Bluetooth 58mm
+                </button>
+                <button type="button" class="btn-cetak-rawbt" onclick="POS_RECEIPT.printRawBT()">
+                  <i class="fas fa-print"></i> Cetak via Aplikasi RawBT
+                </button>
+                <button type="button" class="btn-cetak-browser" onclick="POS_RECEIPT.printBrowserPdf()">
+                  <i class="fas fa-file-pdf"></i> Cetak Browser / Simpan PDF
+                </button>
+                <button type="button" class="btn-wa" onclick="POS_RECEIPT.shareWhatsApp()">
+                  <i class="fab fa-whatsapp"></i> Kirim Struk ke WhatsApp
+                </button>
+              </div>
+
+              <!-- Tombol Aksi iOS (PNG 384px Share/Thermal + Print + WA) -->
+              <div id="struk-actions-ios" class="struk-actions no-print" style="display: none;">
+                <button type="button" id="btn-ios-share-png" class="btn-cetak-ios" onclick="POS_RECEIPT.shareOrPrintIosPng()">
+                  <i class="fas fa-share-nodes"></i> Share / Cetak Gambar Struk 58mm (PNG)
+                </button>
+                <button type="button" class="btn-cetak-browser" onclick="POS_RECEIPT.printBrowserPdf()">
+                  <i class="fas fa-file-pdf"></i> Cetak Browser / Simpan PDF
+                </button>
+                <button type="button" class="btn-wa" onclick="POS_RECEIPT.shareWhatsApp()">
+                  <i class="fab fa-whatsapp"></i> Kirim Teks Struk ke WhatsApp
+                </button>
+                <small class="ios-print-tip">
+                  Pilih aplikasi printer thermal iOS (mis. <b>Thermer</b> / <b>Print Label</b>) atau <b>WhatsApp</b> di menu Share.
+                </small>
+              </div>
+
+              <button
+                type="button"
+                class="btn-secondary-full no-print"
+                style="margin-top: 10px;"
+                onclick="POS_AUTH.navigateTo('page-kasir')"
+              >
+                <i class="fas fa-cash-register"></i> Transaksi Baru (Kembali ke Kasir)
+              </button>
+            </div>
+          </section>
+
+          <!-- ============================================================ -->
+          <!-- PAGE KERANGKA MODUL FASE 3 - 6 (TERKONTROL RBAC)             -->
+          <!-- ============================================================ -->
+          <section id="page-placeholder" class="page-section">
+            <div class="placeholder-card">
+              <div class="placeholder-icon-wrap">
+                <i id="placeholder-icon" class="fas fa-cubes"></i>
+              </div>
+              <span id="placeholder-phase-badge" class="placeholder-phase-badge">Fase 3</span>
+              <h2 id="placeholder-title">Modul Lanjutan</h2>
+              <p id="placeholder-desc"></p>
+              <div id="placeholder-roles" class="placeholder-roles"></div>
+              <button type="button" class="btn-bayar" onclick="POS_AUTH.navigateTo('page-home')">
+                <i class="fas fa-home"></i> Kembali ke Beranda
+              </button>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL CHECKOUT KASIR                                               -->
+    <!-- ================================================================== -->
+    <div id="modal-checkout" class="modal-overlay no-print">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-shopping-bag"></i> Konfirmasi Pembayaran</h3>
+          <i class="fas fa-times" onclick="POS_RETAIL.closeCheckoutModal()"></i>
+        </div>
+
+        <!-- Mode Ngampas Awal -->
+        <div class="ngampas-toggle-box">
+          <label class="checkbox-ngampas-label">
+            <input type="checkbox" id="checkout-is-ngampas" onchange="POS_RETAIL.onNgampasToggle()">
+            <strong>Mode Ngampas / Kanvas Supir</strong>
+          </label>
+          <small>Otomatis menandai transaksi sebagai NGAMPAS &amp; status awal Hutang (setoran menyusul).</small>
+        </div>
+
+        <!-- Pelanggan & Auto Harga Khusus -->
+        <div class="input-group">
+          <label for="checkout-pelanggan">Nama Pelanggan</label>
+          <input
+            type="text"
+            id="checkout-pelanggan"
+            list="datalist-pelanggan"
+            placeholder="Umum (atau ketik nama pelanggan)"
+            oninput="POS_RETAIL.onPelangganInputChange()"
+          >
+          <datalist id="datalist-pelanggan"></datalist>
+          <input type="hidden" id="checkout-pelanggan-id" value="">
+          <small id="checkout-khusus-hint" class="khusus-hint-text" style="display: none;"></small>
+        </div>
+
+        <!-- Daftar Item Keranjang (Dukung Ubah Harga/Diskon Item) -->
+        <div id="checkout-cart-list" class="keranjang-list"></div>
+
+        <!-- Diskon Total Nota -->
+        <div class="diskon-panel">
+          <label for="checkout-diskon-total"><strong>Diskon Tambahan (Rp)</strong></label>
+          <input
+            type="number"
+            id="checkout-diskon-total"
+            min="0"
+            value="0"
+            style="width: 140px; text-align: right;"
+            oninput="POS_RETAIL.recalculateCheckout()"
+          >
+        </div>
+
+        <!-- Total Tagihan -->
+        <div class="total-box">
+          <h4>Total Tagihan Akhir</h4>
+          <h2 id="checkout-total-akhir">Rp 0</h2>
+        </div>
+
+        <div class="grid-2-inputs">
+          <div class="input-group">
+            <label for="checkout-metode">Metode Bayar</label>
+            <select id="checkout-metode" onchange="POS_RETAIL.onCheckoutMetodeChange()">
+              <option value="Tunai">Tunai</option>
+              <option value="Transfer">Transfer Bank</option>
+              <option value="QRIS">QRIS</option>
+              <option value="Shopee">Shopee</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="checkout-akun-kas">Masuk ke Akun Kas</label>
+            <select id="checkout-akun-kas"></select>
+          </div>
+        </div>
+
+        <div class="grid-2-inputs">
+          <div class="input-group">
+            <label for="checkout-status">Status Pembayaran</label>
+            <select id="checkout-status" onchange="POS_RETAIL.recalculateCheckout()">
+              <option value="Lunas">Lunas</option>
+              <option value="Hutang">Hutang / DP</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="checkout-tanggal-custom">Tanggal (Opsional)</label>
+            <input type="date" id="checkout-tanggal-custom">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="label-with-action">
+            <label for="checkout-bayar">Nominal Dibayar (Rp)</label>
+            <button type="button" class="btn-uang-pas" onclick="POS_RETAIL.setUangPas()">Uang Pas</button>
+          </div>
+          <input
+            type="number"
+            id="checkout-bayar"
+            min="0"
+            placeholder="0"
+            oninput="POS_RETAIL.recalculateCheckout()"
+          >
+        </div>
+
+        <div id="checkout-kembalian-box" class="kembalian-box">
+          <span id="checkout-kembalian-text">Kembalian: Rp 0</span>
+        </div>
+
+        <button
+          type="button"
+          id="btn-simpan-transaksi"
+          class="btn-simpan-trx"
+          onclick="POS_RETAIL.submitTransaksi()"
+        >
+          <i class="fas fa-check-circle"></i> Simpan &amp; Cetak Struk
+        </button>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODAL SOFT-DELETE VOID (KHUSUS MANAJER, BOS, ADMIN)                -->
+    <!-- ================================================================== -->
+    <div id="modal-void" class="modal-overlay no-print">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 style="color: var(--red-delete);"><i class="fas fa-ban"></i> Konfirmasi Hapus Bersih (Void)</h3>
+          <i class="fas fa-times" onclick="POS_RETAIL.closeVoidModal()"></i>
+        </div>
+
+        <div id="void-target-info" class="piutang-summary-box"></div>
+
+        <div class="info-banner-yellow">
+          Data tidak dihapus permanen, melainkan ditandai <b>VOID</b>, stok &amp; saldo kas dikembalikan otomatis, dan tercatat di <b>AUDIT_LOG</b>.
+        </div>
+
+        <div class="input-group">
+          <label for="void-reason-input">Alasan Void (Wajib, minimal 3 karakter)</label>
+          <textarea
+            id="void-reason-input"
+            rows="3"
+            placeholder="Contoh: Salah input jumlah barang / pelanggan batal beli"
+            required
+          ></textarea>
+        </div>
+
+        <button type="button" id="btn-confirm-void" class="btn-danger-full" onclick="POS_RETAIL.confirmVoid()">
+          <i class="fas fa-trash-can"></i> Ya, Proses Void Sekarang
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Library html2canvas untuk Render Struk PNG 384px di iOS -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+
+  <!-- Modul JavaScript POS v3.0 (Urutan Wajib Dipertahankan) -->
+  <script src="./js/config.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/receipt.js"></script>
+  <script src="./js/retail.js"></script>
+</body>
+</html>
