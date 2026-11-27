@@ -1,15 +1,8 @@
 /**
  * ============================================================================
- * POS AL-KAUTSAR BUMINDO v3.3 — MODUL LAPORAN BOS RAMAH LANSIA & NOTIFIKASI
- * File: js/report_notif.js
+ * POS AL-KAUTSAR BUMINDO v3.3.1 — MODUL LAPORAN BOS & NOTIFIKASI REAL-TIME
+ * File: js/report_notif.js (PATCH EVENT DELEGATION & ANTI-STUCK LOADING)
  * ============================================================================
- * Cakupan:
- * 1. Halaman Laporan Bos (#page-laporan-bos) — 7 KPI Utama + Cari & Hitung Rekap
- * 2. Lonceng Notifikasi Topbar (Polling ringan 60 detik + Unread Badge)
- * 3. Halaman Pusat Notifikasi (#page-notifikasi):
- *    - Sakelar Notifikasi Saya (Kontrol Ganda Telegram + Tes Kirim)
- *    - Riwayat Notifikasi In-App (NOTIF_INAPP)
- *    - Panel Admin: Kelola Akses Notifikasi Tim (Notif_Allowed & Notif_Events)
  */
 
 window.POS_REPORT_NOTIF = (function () {
@@ -31,16 +24,13 @@ window.POS_REPORT_NOTIF = (function () {
 
   const state = {
     initialized: false,
-    // State Laporan Bos
-    bosCabang: "all", // korpri | pringsewu | all
-    bosPeriode: "hari_ini", // hari_ini | minggu_ini | bulan_ini | pilih_bulan
-    bosBulan: "", // YYYY-MM
+    bosCabang: "all",
+    bosPeriode: "hari_ini",
+    bosBulan: "",
     bosLoading: false,
     bosLastData: null,
-    // State Search Rekap
-    searchTipe: "semua", // semua | pemasukan | pengeluaran
+    searchTipe: "semua",
     searchLoading: false,
-    // State Notifikasi
     notifItems: [],
     myPref: null,
     botConfigured: false,
@@ -49,10 +39,6 @@ window.POS_REPORT_NOTIF = (function () {
     pollTimer: null,
     isPolling: false
   };
-
-  // ==========================================================================
-  // UTILITAS UMUM
-  // ==========================================================================
 
   function getSession() {
     if (window.POS_AUTH && typeof window.POS_AUTH.getSession === "function") {
@@ -100,7 +86,6 @@ window.POS_REPORT_NOTIF = (function () {
       window.showToast(msg, type);
       return;
     }
-    // Fallback toast ringan
     let el = document.getElementById("rn-fallback-toast");
     if (!el) {
       el = document.createElement("div");
@@ -126,22 +111,38 @@ window.POS_REPORT_NOTIF = (function () {
     return "Gabungan (Korpri + Pringsewu)";
   }
 
+  function callApi(actionName, payload = {}) {
+    if (!window.POS_API) {
+      return Promise.resolve({
+        sukses: false,
+        pesan: "Modul js/api.js belum dimuat. Periksa error sintaks di js/api.js."
+      });
+    }
+    if (typeof window.POS_API[actionName] === "function") {
+      return window.POS_API[actionName](payload);
+    }
+    if (typeof window.POS_API.request === "function") {
+      return window.POS_API.request(actionName, payload, {
+        cabang: payload && payload.cabang ? payload.cabang : undefined
+      });
+    }
+    return Promise.resolve({
+      sukses: false,
+      pesan: `Fungsi API '${actionName}' belum tersedia di js/api.js.`
+    });
+  }
+
   function navigateToPage(pageId) {
-    // 1. Coba klik tombol menu sidebar jika tersedia agar state router app.js sinkron
     const navBtn = document.querySelector(`[data-page="${pageId}"], [data-target="${pageId}"]`);
     if (navBtn) {
       navBtn.click();
       return;
     }
-    // 2. Coba API router global jika tersedia
     if (window.POS_APP && typeof window.POS_APP.showPage === "function") {
       window.POS_APP.showPage(pageId);
       return;
     }
-    // 3. Fallback langsung aktifkan section
-    document.querySelectorAll(".page-section").forEach((sec) => {
-      sec.classList.remove("active");
-    });
+    document.querySelectorAll(".page-section").forEach((sec) => sec.classList.remove("active"));
     const target = document.getElementById(pageId);
     if (target) target.classList.add("active");
   }
@@ -152,20 +153,15 @@ window.POS_REPORT_NOTIF = (function () {
 
   function syncBosFilterUI() {
     document.querySelectorAll(".bos-cabang-btn").forEach((btn) => {
-      const val = btn.getAttribute("data-cabang");
-      btn.classList.toggle("active", val === state.bosCabang);
+      btn.classList.toggle("active", btn.getAttribute("data-cabang") === state.bosCabang);
     });
-
     document.querySelectorAll(".bos-periode-btn").forEach((btn) => {
-      const val = btn.getAttribute("data-periode");
-      btn.classList.toggle("active", val === state.bosPeriode);
+      btn.classList.toggle("active", btn.getAttribute("data-periode") === state.bosPeriode);
     });
-
     const bulanWrap = document.getElementById("bos-pilih-bulan-wrap");
     if (bulanWrap) {
       bulanWrap.style.display = state.bosPeriode === "pilih_bulan" ? "flex" : "none";
     }
-
     const bulanInput = document.getElementById("bos-input-bulan");
     if (bulanInput && !bulanInput.value) {
       bulanInput.value = state.bosBulan || getCurrentMonthStr();
@@ -174,10 +170,17 @@ window.POS_REPORT_NOTIF = (function () {
 
   async function loadLaporanBos() {
     const session = getSession();
-    if (!session || !session.token) return;
+    const statusEl = document.getElementById("bos-status-bar");
+    const container = document.getElementById("bos-kpi-container");
+
+    if (!session || !session.token) {
+      if (container) {
+        container.innerHTML = `<div class="bos-alert-box bos-alert-warning">Sesi login tidak ditemukan. Silakan login ulang.</div>`;
+      }
+      return;
+    }
 
     if (session.activeRole !== "Bos" && session.activeRole !== "Admin") {
-      const container = document.getElementById("bos-kpi-container");
       if (container) {
         container.innerHTML = `
           <div class="bos-alert-box bos-alert-danger">
@@ -191,12 +194,8 @@ window.POS_REPORT_NOTIF = (function () {
     if (state.bosLoading) return;
     state.bosLoading = true;
 
-    const statusEl = document.getElementById("bos-status-bar");
-    const container = document.getElementById("bos-kpi-container");
-    if (statusEl) {
-      statusEl.textContent = "Sedang menghitung laporan terbaru...";
-    }
-    if (container && !state.bosLastData) {
+    if (statusEl) statusEl.textContent = "Sedang menghitung laporan terbaru...";
+    if (container) {
       container.innerHTML = `
         <div class="bos-loading-box">
           <i class="fas fa-spinner fa-spin"></i>
@@ -206,13 +205,12 @@ window.POS_REPORT_NOTIF = (function () {
     }
 
     try {
-      const payload = {
+      const res = await callApi("getLaporanBos", {
         cabang: state.bosCabang,
         periode: state.bosPeriode,
         bulan: state.bosBulan || getCurrentMonthStr()
-      };
+      });
 
-      const res = await window.POS_API.getLaporanBos(payload);
       if (!res || !res.sukses || !res.data) {
         const errMsg = (res && res.pesan) || "Gagal memuat Laporan Bos.";
         if (statusEl) statusEl.textContent = errMsg;
@@ -236,6 +234,9 @@ window.POS_REPORT_NOTIF = (function () {
     } catch (err) {
       const msg = "Gangguan koneksi saat memuat laporan: " + (err.message || err);
       if (statusEl) statusEl.textContent = msg;
+      if (container) {
+        container.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml(msg)}</div>`;
+      }
       showToast(msg, "error");
     } finally {
       state.bosLoading = false;
@@ -248,16 +249,14 @@ window.POS_REPORT_NOTIF = (function () {
 
     const kpi = data.kpi || {};
     const penj = kpi.penjualan || { total: 0, ritel: 0, damiu: 0 };
-    const peng = kpi.pengeluaranOps || { total: 0, catatanIsolasi: "" };
+    const peng = kpi.pengeluaranOps || { total: 0 };
     const laba = kpi.labaBersih || { total: 0, totalHpp: 0, marginPersen: 0 };
     const uang = kpi.perputaranUang || {
       totalSemuaKas: 0,
       kasLaci: 0,
       rekeningToko: 0,
       rekeningBunda: 0,
-      setoranPrivePeriode: 0,
-      mutasiCabangMasukPeriode: 0,
-      mutasiCabangKeluarPeriode: 0
+      setoranPrivePeriode: 0
     };
     const stok = kpi.stokBarang || {
       nilaiAsetModal: 0,
@@ -270,7 +269,6 @@ window.POS_REPORT_NOTIF = (function () {
       ? kpi.top5PengeluaranTerbanyak
       : [];
 
-    // Ringkasan pembanding 2 cabang jika mode Gabungan
     let bandingCabangHtml = "";
     if (data.cabang === "all" && data.ringkasanPerCabang) {
       const kData = data.ringkasanPerCabang.korpri || {};
@@ -293,10 +291,9 @@ window.POS_REPORT_NOTIF = (function () {
       `;
     }
 
-    // Daftar Stok Menipis (< 10)
     let stokMenipisHtml = `<div class="bos-empty-note">Semua stok barang masih aman (minimal 10 unit).</div>`;
     if (stok.daftarStokMenipis && stok.daftarStokMenipis.length > 0) {
-      const rows = stok.daftarStokMenipis
+      stokMenipisHtml = `<div class="bos-list-wrap">${stok.daftarStokMenipis
         .slice(0, 15)
         .map((it) => {
           const cbBadge =
@@ -309,16 +306,14 @@ window.POS_REPORT_NOTIF = (function () {
                 <div class="bos-list-name">${escapeHtml(it.nama)} ${cbBadge}</div>
               </div>
               <div class="bos-list-right bos-text-danger">
-                Sisa ${escapeHtml(it.stok)} ${escapeHtml(it.satuan || "pcs")}
+                Sisa ${escapeHtml(it.stok)} ${escapeHtml(it.satuan || "Pcs")}
               </div>
             </div>
           `;
         })
-        .join("");
-      stokMenipisHtml = `<div class="bos-list-wrap">${rows}</div>`;
+        .join("")}</div>`;
     }
 
-    // Top 5 Barang Terlaris
     let topBarangHtml = `<div class="bos-empty-note">Belum ada penjualan barang pada periode ini.</div>`;
     if (topBarang.length > 0) {
       topBarangHtml = `<div class="bos-list-wrap">${topBarang
@@ -339,7 +334,6 @@ window.POS_REPORT_NOTIF = (function () {
         .join("")}</div>`;
     }
 
-    // Top 5 Jenis Pengeluaran Terbanyak
     let topPengHtml = `<div class="bos-empty-note">Belum ada pengeluaran operasional pada periode ini.</div>`;
     if (topPengeluaran.length > 0) {
       topPengHtml = `<div class="bos-list-wrap">${topPengeluaran
@@ -365,7 +359,6 @@ window.POS_REPORT_NOTIF = (function () {
     container.innerHTML = `
       ${bandingCabangHtml}
 
-      <!-- KPI 1: PENJUALAN -->
       <div class="bos-kpi-card bos-kpi-blue">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">1</span>
@@ -373,18 +366,11 @@ window.POS_REPORT_NOTIF = (function () {
         </div>
         <div class="bos-kpi-value">${formatRp(penj.total)}</div>
         <div class="bos-kpi-breakdown">
-          <div class="bos-breakdown-row">
-            <span>Penjualan Toko / Ritel</span>
-            <strong>${formatRp(penj.ritel)}</strong>
-          </div>
-          <div class="bos-breakdown-row">
-            <span>Proyek Pemasangan DAMIU</span>
-            <strong>${formatRp(penj.damiu)}</strong>
-          </div>
+          <div class="bos-breakdown-row"><span>Penjualan Toko / Ritel</span><strong>${formatRp(penj.ritel)}</strong></div>
+          <div class="bos-breakdown-row"><span>Proyek Pemasangan DAMIU</span><strong>${formatRp(penj.damiu)}</strong></div>
         </div>
       </div>
 
-      <!-- KPI 2: PENGELUARAN OPERASIONAL MURNI -->
       <div class="bos-kpi-card bos-kpi-red">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">2</span>
@@ -396,7 +382,6 @@ window.POS_REPORT_NOTIF = (function () {
         </div>
       </div>
 
-      <!-- KPI 3: LABA BERSIH -->
       <div class="bos-kpi-card ${labaClass}">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">3</span>
@@ -404,18 +389,11 @@ window.POS_REPORT_NOTIF = (function () {
         </div>
         <div class="bos-kpi-value">${formatRp(laba.total)}</div>
         <div class="bos-kpi-breakdown">
-          <div class="bos-breakdown-row">
-            <span>Modal Barang Terjual (HPP)</span>
-            <strong>${formatRp(laba.totalHpp)}</strong>
-          </div>
-          <div class="bos-breakdown-row">
-            <span>Persentase Keuntungan</span>
-            <strong>${Number(laba.marginPersen || 0)}%</strong>
-          </div>
+          <div class="bos-breakdown-row"><span>Modal Barang Terjual (HPP)</span><strong>${formatRp(laba.totalHpp)}</strong></div>
+          <div class="bos-breakdown-row"><span>Persentase Keuntungan</span><strong>${Number(laba.marginPersen || 0)}%</strong></div>
         </div>
       </div>
 
-      <!-- KPI 4: PERPUTARAN UANG (3 AKUN KAS) -->
       <div class="bos-kpi-card bos-kpi-teal">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">4</span>
@@ -423,30 +401,17 @@ window.POS_REPORT_NOTIF = (function () {
         </div>
         <div class="bos-kpi-value">${formatRp(uang.totalSemuaKas)}</div>
         <div class="bos-kpi-breakdown">
-          <div class="bos-breakdown-row">
-            <span><i class="fas fa-cash-register"></i> Kas Laci (Uang Tunai Toko)</span>
-            <strong>${formatRp(uang.kasLaci)}</strong>
-          </div>
-          <div class="bos-breakdown-row">
-            <span><i class="fas fa-building-columns"></i> Rekening Toko</span>
-            <strong>${formatRp(uang.rekeningToko)}</strong>
-          </div>
-          <div class="bos-breakdown-row">
-            <span><i class="fas fa-wallet"></i> Rekening Bunda</span>
-            <strong>${formatRp(uang.rekeningBunda)}</strong>
-          </div>
+          <div class="bos-breakdown-row"><span><i class="fas fa-cash-register"></i> Kas Laci (Tunai Toko)</span><strong>${formatRp(uang.kasLaci)}</strong></div>
+          <div class="bos-breakdown-row"><span><i class="fas fa-building-columns"></i> Rekening Toko</span><strong>${formatRp(uang.rekeningToko)}</strong></div>
+          <div class="bos-breakdown-row"><span><i class="fas fa-wallet"></i> Rekening Bunda</span><strong>${formatRp(uang.rekeningBunda)}</strong></div>
           ${
             uang.setoranPrivePeriode > 0
-              ? `<div class="bos-breakdown-row bos-row-muted">
-                  <span>Info Setoran ke Bunda (Periode ini)</span>
-                  <strong>${formatRp(uang.setoranPrivePeriode)}</strong>
-                </div>`
+              ? `<div class="bos-breakdown-row bos-row-muted"><span>Info Setoran ke Bunda (Periode ini)</span><strong>${formatRp(uang.setoranPrivePeriode)}</strong></div>`
               : ""
           }
         </div>
       </div>
 
-      <!-- KPI 5: STOK BARANG & STOK MENIPIS -->
       <div class="bos-kpi-card bos-kpi-amber">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">5</span>
@@ -454,15 +419,12 @@ window.POS_REPORT_NOTIF = (function () {
         </div>
         <div class="bos-kpi-value">${formatRp(stok.nilaiAsetModal)}</div>
         <div class="bos-kpi-note">
-          Total ${Number(stok.totalSkuAktif || 0)} jenis barang aktif • <b>${Number(
-            stok.jumlahStokMenipis || 0
-          )} barang stoknya menipis (&lt; 10)</b>
+          Total ${Number(stok.totalSkuAktif || 0)} jenis barang aktif • <b>${Number(stok.jumlahStokMenipis || 0)} barang stoknya menipis (&lt; 10)</b>
         </div>
         <div class="bos-subcard-title">Daftar Barang Perlu Segera Dibelanja:</div>
         ${stokMenipisHtml}
       </div>
 
-      <!-- KPI 6: TOP 5 BARANG TERLARIS -->
       <div class="bos-kpi-card bos-kpi-slate">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">6</span>
@@ -471,7 +433,6 @@ window.POS_REPORT_NOTIF = (function () {
         ${topBarangHtml}
       </div>
 
-      <!-- KPI 7: TOP 5 PENGELUARAN TERBANYAK -->
       <div class="bos-kpi-card bos-kpi-slate">
         <div class="bos-kpi-header">
           <span class="bos-kpi-num">7</span>
@@ -483,7 +444,7 @@ window.POS_REPORT_NOTIF = (function () {
   }
 
   // ==========================================================================
-  // BAGIAN 2: CARI & HITUNG REKAP BOS (cariRekapBos)
+  // BAGIAN 2: CARI & HITUNG REKAP BOS
   // ==========================================================================
 
   async function jalankanCariRekapBos() {
@@ -501,15 +462,10 @@ window.POS_REPORT_NOTIF = (function () {
     if (state.searchLoading) return;
     state.searchLoading = true;
 
-    resultEl.innerHTML = `
-      <div class="bos-loading-box">
-        <i class="fas fa-spinner fa-spin"></i>
-        <div>Mencari "${escapeHtml(keyword)}"...</div>
-      </div>
-    `;
+    resultEl.innerHTML = `<div class="bos-loading-box"><i class="fas fa-spinner fa-spin"></i> Mencari "${escapeHtml(keyword)}"...</div>`;
 
     try {
-      const res = await window.POS_API.cariRekapBos({
+      const res = await callApi("cariRekapBos", {
         keyword,
         tipe: state.searchTipe,
         cabang: state.bosCabang,
@@ -518,16 +474,13 @@ window.POS_REPORT_NOTIF = (function () {
       });
 
       if (!res || !res.sukses || !res.data) {
-        const errMsg = (res && res.pesan) || "Gagal mencari data rekap.";
-        resultEl.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml(errMsg)}</div>`;
+        resultEl.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml((res && res.pesan) || "Gagal mencari data rekap.")}</div>`;
         return;
       }
 
       renderHasilCariRekap(res.data);
     } catch (err) {
-      resultEl.innerHTML = `<div class="bos-alert-box bos-alert-danger">Error: ${escapeHtml(
-        err.message || err
-      )}</div>`;
+      resultEl.innerHTML = `<div class="bos-alert-box bos-alert-danger">Error: ${escapeHtml(err.message || err)}</div>`;
     } finally {
       state.searchLoading = false;
     }
@@ -541,35 +494,23 @@ window.POS_REPORT_NOTIF = (function () {
     const items = Array.isArray(data.items) ? data.items : [];
 
     if (items.length === 0) {
-      resultEl.innerHTML = `
-        <div class="bos-empty-note" style="padding:16px;">
-          Tidak ditemukan catatan dengan kata kunci <b>"${escapeHtml(data.keyword)}"</b> pada periode <b>${escapeHtml(
-        data.periode ? data.periode.label : ""
-      )}</b>.
-        </div>
-      `;
+      resultEl.innerHTML = `<div class="bos-empty-note" style="padding:16px;">Tidak ditemukan catatan dengan kata kunci <b>"${escapeHtml(data.keyword)}"</b> pada periode ini.</div>`;
       return;
     }
 
     const listHtml = items
       .map((it) => {
         const isOut = it.jenis === "Pengeluaran";
-        const badgeCls = isOut ? "bos-pill-red" : "bos-pill-green";
-        const nominalCls = isOut ? "bos-text-danger" : "bos-text-success";
         return `
           <div class="bos-search-item">
             <div class="bos-search-top">
-              <span class="bos-search-date">${escapeHtml(it.tanggal)} • ${escapeHtml(
-          String(it.cabang || "").toUpperCase()
-        )}</span>
-              <span class="bos-pill ${badgeCls}">${escapeHtml(it.jenis)}</span>
+              <span class="bos-search-date">${escapeHtml(it.tanggal)} • ${escapeHtml(String(it.cabang || "").toUpperCase())}</span>
+              <span class="bos-pill ${isOut ? "bos-pill-red" : "bos-pill-green"}">${escapeHtml(it.jenis)}</span>
             </div>
             <div class="bos-search-ket">${escapeHtml(it.keterangan)}</div>
             <div class="bos-search-bottom">
-              <span class="bos-search-akun">${escapeHtml(it.akunKas)} ${
-          it.refId ? `• ${escapeHtml(it.refId)}` : ""
-        }</span>
-              <strong class="${nominalCls}">${formatRp(it.nominal)}</strong>
+              <span class="bos-search-akun">${escapeHtml(it.akunKas)} ${it.refId ? `• ${escapeHtml(it.refId)}` : ""}</span>
+              <strong class="${isOut ? "bos-text-danger" : "bos-text-success"}">${formatRp(it.nominal)}</strong>
             </div>
           </div>
         `;
@@ -578,26 +519,11 @@ window.POS_REPORT_NOTIF = (function () {
 
     resultEl.innerHTML = `
       <div class="bos-search-summary">
-        <div class="bos-search-sum-title">
-          Hasil "${escapeHtml(data.keyword)}" (${Number(r.jumlahData || 0)} catatan)
-        </div>
+        <div class="bos-search-sum-title">Hasil "${escapeHtml(data.keyword)}" (${Number(r.jumlahData || 0)} catatan)</div>
         <div class="bos-search-sum-grid">
-          <div class="bos-sum-box bos-sum-in">
-            <span>Total Pemasukan Kas</span>
-            <strong>${formatRp(r.totalPemasukanKas)}</strong>
-          </div>
-          <div class="bos-sum-box bos-sum-out">
-            <span>Total Pengeluaran Kas</span>
-            <strong>${formatRp(r.totalPengeluaranKas)}</strong>
-          </div>
-          ${
-            r.totalNotaPenjualan > 0
-              ? `<div class="bos-sum-box bos-sum-nota">
-                  <span>Total Nota Penjualan Cocok</span>
-                  <strong>${formatRp(r.totalNotaPenjualan)}</strong>
-                </div>`
-              : ""
-          }
+          <div class="bos-sum-box bos-sum-in"><span>Total Pemasukan Kas</span><strong>${formatRp(r.totalPemasukanKas)}</strong></div>
+          <div class="bos-sum-box bos-sum-out"><span>Total Pengeluaran Kas</span><strong>${formatRp(r.totalPengeluaranKas)}</strong></div>
+          ${r.totalNotaPenjualan > 0 ? `<div class="bos-sum-box bos-sum-nota"><span>Total Nota Penjualan</span><strong>${formatRp(r.totalNotaPenjualan)}</strong></div>` : ""}
         </div>
       </div>
       <div class="bos-search-list">${listHtml}</div>
@@ -605,22 +531,19 @@ window.POS_REPORT_NOTIF = (function () {
   }
 
   // ==========================================================================
-  // BAGIAN 3: LONCENG TOPBAR (POLLING 60 DETIK) & HALAMAN NOTIFIKASI
+  // BAGIAN 3: LONCENG TOPBAR & HALAMAN NOTIFIKASI
   // ==========================================================================
 
   function updateTopbarBadge(items) {
     const badge = document.getElementById("topbar-notif-badge");
     if (!badge) return;
-
     if (!Array.isArray(items) || items.length === 0) {
       badge.style.display = "none";
       badge.textContent = "0";
       return;
     }
-
     const lastSeenId = localStorage.getItem(LAST_SEEN_NOTIF_KEY) || "";
     let unreadCount = 0;
-
     if (!lastSeenId) {
       unreadCount = Math.min(items.length, 9);
     } else {
@@ -629,7 +552,6 @@ window.POS_REPORT_NOTIF = (function () {
         unreadCount++;
       }
     }
-
     if (unreadCount > 0) {
       badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
       badge.style.display = "inline-flex";
@@ -648,22 +570,20 @@ window.POS_REPORT_NOTIF = (function () {
 
   async function pollNotifInApp(silent = true) {
     const session = getSession();
-    if (!session || !session.token) return;
-    if (silent && document.visibilityState === "hidden") return;
-    if (state.isPolling) return;
+    if (!session || !session.token) return { sukses: false, pesan: "Belum login." };
+    if (silent && document.visibilityState === "hidden") return { sukses: false };
+    if (state.isPolling) return { sukses: false };
 
     state.isPolling = true;
     try {
-      const res = await window.POS_API.getNotifInApp({ limit: 40 });
+      const res = await callApi("getNotifInApp", { limit: 40 });
       if (res && res.sukses && res.data) {
         state.notifItems = Array.isArray(res.data.items) ? res.data.items : [];
         state.myPref = res.data.myPreference || null;
         state.botConfigured = Boolean(res.data.botConfigured);
 
-        // Jika halaman notifikasi sedang terbuka, langsung tandai terbaca & render ulang
         const notifPage = document.getElementById("page-notifikasi");
-        const isNotifOpen = notifPage && notifPage.classList.contains("active");
-        if (isNotifOpen) {
+        if (notifPage && notifPage.classList.contains("active")) {
           markAllNotifSeen();
           renderMyNotifPreference();
           renderNotifHistoryList();
@@ -671,8 +591,9 @@ window.POS_REPORT_NOTIF = (function () {
           updateTopbarBadge(state.notifItems);
         }
       }
+      return res;
     } catch (e) {
-      // Polling selalu fail-safe agar tidak mengganggu pengguna
+      return { sukses: false, pesan: e.message || String(e) };
     } finally {
       state.isPolling = false;
     }
@@ -681,26 +602,34 @@ window.POS_REPORT_NOTIF = (function () {
   function startNotifPolling() {
     if (state.pollTimer) clearInterval(state.pollTimer);
     pollNotifInApp(true);
-    state.pollTimer = setInterval(() => {
-      pollNotifInApp(true);
-    }, POLL_INTERVAL_MS);
+    state.pollTimer = setInterval(() => pollNotifInApp(true), POLL_INTERVAL_MS);
   }
 
   async function loadNotifPage() {
     const session = getSession();
-    if (!session || !session.token) return;
-
+    const prefWrap = document.getElementById("notif-my-pref-body");
     const listEl = document.getElementById("notif-history-list");
+
+    if (!session || !session.token) {
+      if (prefWrap) prefWrap.innerHTML = `<div class="bos-alert-box bos-alert-warning">Silakan login ulang.</div>`;
+      return;
+    }
+
     if (listEl && state.notifItems.length === 0) {
       listEl.innerHTML = `<div class="bos-loading-box"><i class="fas fa-spinner fa-spin"></i> Memuat riwayat notifikasi...</div>`;
     }
 
-    await pollNotifInApp(false);
-    markAllNotifSeen();
-    renderMyNotifPreference();
-    renderNotifHistoryList();
+    const res = await pollNotifInApp(false);
+    if (!res || !res.sukses) {
+      const msg = (res && res.pesan) || "Gagal memuat notifikasi dari server.";
+      if (prefWrap) prefWrap.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml(msg)}</div>`;
+      if (listEl) listEl.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml(msg)}</div>`;
+    } else {
+      markAllNotifSeen();
+      renderMyNotifPreference();
+      renderNotifHistoryList();
+    }
 
-    // Panel Admin hanya tampil jika activeRole === "Admin"
     const adminSection = document.getElementById("notif-admin-panel");
     if (adminSection) {
       if (session.activeRole === "Admin") {
@@ -791,21 +720,11 @@ window.POS_REPORT_NOTIF = (function () {
         </div>
       </div>
     `;
-
-    const btnSave = document.getElementById("btn-save-my-notif");
-    if (btnSave) {
-      btnSave.addEventListener("click", handleSaveMyNotifPref);
-    }
-    const btnTest = document.getElementById("btn-test-my-telegram");
-    if (btnTest) {
-      btnTest.addEventListener("click", handleTestMyTelegram);
-    }
   }
 
-  async function handleSaveMyNotifPref() {
+  async function handleSaveMyNotifPref(btn) {
     const chk = document.getElementById("notif-my-enabled");
     const inp = document.getElementById("notif-my-chat-id");
-    const btn = document.getElementById("btn-save-my-notif");
     if (!chk || !inp) return;
 
     const notifEnabled = chk.checked;
@@ -813,10 +732,7 @@ window.POS_REPORT_NOTIF = (function () {
 
     if (btn) btn.disabled = true;
     try {
-      const res = await window.POS_API.updateNotifPreference({
-        notifEnabled,
-        telegramChatId
-      });
+      const res = await callApi("updateNotifPreference", { notifEnabled, telegramChatId });
       if (!res || !res.sukses) {
         showToast((res && res.pesan) || "Gagal menyimpan pengaturan notifikasi.", "error");
         return;
@@ -833,11 +749,9 @@ window.POS_REPORT_NOTIF = (function () {
     }
   }
 
-  async function handleTestMyTelegram() {
+  async function handleTestMyTelegram(btn) {
     const inp = document.getElementById("notif-my-chat-id");
-    const btn = document.getElementById("btn-test-my-telegram");
     const telegramChatId = inp ? String(inp.value || "").trim() : "";
-
     if (!telegramChatId) {
       showToast("Isi Telegram Chat ID Anda terlebih dahulu.", "error");
       if (inp) inp.focus();
@@ -846,7 +760,7 @@ window.POS_REPORT_NOTIF = (function () {
 
     if (btn) btn.disabled = true;
     try {
-      const res = await window.POS_API.testNotifTelegram({ telegramChatId });
+      const res = await callApi("testNotifTelegram", { telegramChatId });
       if (!res || !res.sukses) {
         showToast((res && res.pesan) || "Tes Telegram gagal dikirim.", "error");
         return;
@@ -871,13 +785,12 @@ window.POS_REPORT_NOTIF = (function () {
     listEl.innerHTML = state.notifItems
       .map((it) => {
         const isDanger = it.eventType === "VOID_TRANSAKSI";
-        const badgeCls = isDanger ? "bos-pill-red" : "bos-pill-blue";
         const evLabel = EVENT_LABELS[it.eventType] || it.eventType;
         return `
           <div class="notif-item-card">
             <div class="notif-item-top">
               <div class="notif-badges">
-                <span class="bos-pill ${badgeCls}">${escapeHtml(evLabel)}</span>
+                <span class="bos-pill ${isDanger ? "bos-pill-red" : "bos-pill-blue"}">${escapeHtml(evLabel)}</span>
                 <span class="bos-mini-badge">${escapeHtml(String(it.cabang || "all").toUpperCase())}</span>
               </div>
               <span class="notif-time">${escapeHtml(it.timestampWIB)} WIB</span>
@@ -903,33 +816,23 @@ window.POS_REPORT_NOTIF = (function () {
     if (!wrap) return;
 
     wrap.innerHTML = `<div class="bos-loading-box"><i class="fas fa-spinner fa-spin"></i> Memuat daftar user tim...</div>`;
-
     try {
-      const res = await window.POS_API.kelolaAksesNotifAdmin({ mode: "LIST" });
+      const res = await callApi("kelolaAksesNotifAdmin", { mode: "LIST" });
       if (!res || !res.sukses || !res.data) {
-        wrap.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml(
-          (res && res.pesan) || "Gagal memuat daftar akses tim."
-        )}</div>`;
+        wrap.innerHTML = `<div class="bos-alert-box bos-alert-danger">${escapeHtml((res && res.pesan) || "Gagal memuat daftar akses tim.")}</div>`;
         return;
       }
-
       state.adminUsers = Array.isArray(res.data.users) ? res.data.users : [];
-      state.adminEvents = Array.isArray(res.data.availableEvents)
-        ? res.data.availableEvents
-        : DEFAULT_EVENTS;
-
+      state.adminEvents = Array.isArray(res.data.availableEvents) ? res.data.availableEvents : DEFAULT_EVENTS;
       renderAdminNotifUsers();
     } catch (err) {
-      wrap.innerHTML = `<div class="bos-alert-box bos-alert-danger">Error: ${escapeHtml(
-        err.message || err
-      )}</div>`;
+      wrap.innerHTML = `<div class="bos-alert-box bos-alert-danger">Error: ${escapeHtml(err.message || err)}</div>`;
     }
   }
 
   function renderAdminNotifUsers() {
     const wrap = document.getElementById("notif-admin-list");
     if (!wrap) return;
-
     if (state.adminUsers.length === 0) {
       wrap.innerHTML = `<div class="bos-empty-note">Tidak ada data user di tab USERS.</div>`;
       return;
@@ -942,9 +845,7 @@ window.POS_REPORT_NOTIF = (function () {
             const checked = u.notifEvents.includes("ALL") || u.notifEvents.includes(ev);
             return `
               <label class="admin-ev-chip">
-                <input type="checkbox" class="admin-ev-cb" data-user-idx="${idx}" value="${escapeHtml(
-              ev
-            )}" ${checked ? "checked" : ""} />
+                <input type="checkbox" class="admin-ev-cb" data-user-idx="${idx}" value="${escapeHtml(ev)}" ${checked ? "checked" : ""} />
                 <span>${escapeHtml(EVENT_LABELS[ev] || ev)}</span>
               </label>
             `;
@@ -955,21 +856,15 @@ window.POS_REPORT_NOTIF = (function () {
           <div class="admin-user-card" data-username="${escapeHtml(u.username)}">
             <div class="admin-user-head">
               <div>
-                <div class="admin-user-name">${escapeHtml(u.nama)} <small>(@${escapeHtml(
-          u.username
-        )})</small></div>
+                <div class="admin-user-name">${escapeHtml(u.nama)} <small>(@${escapeHtml(u.username)})</small></div>
                 <div class="admin-user-meta">
-                  Peran: <b>${escapeHtml(u.roles || "-")}</b> • Cabang: <b>${escapeHtml(
-          String(u.allowedCabang || "all").toUpperCase()
-        )}</b>
+                  Peran: <b>${escapeHtml(u.roles || "-")}</b> • Cabang: <b>${escapeHtml(String(u.allowedCabang || "all").toUpperCase())}</b>
                   • Sakelar User: <b>${u.notifEnabled ? "ON" : "OFF"}</b>
                   • Chat ID: <code>${escapeHtml(u.telegramChatId || "Belum diisi")}</code>
                 </div>
               </div>
               <label class="rn-switch" title="Izinkan Notifikasi (Admin)">
-                <input type="checkbox" class="admin-allowed-cb" data-user-idx="${idx}" ${
-          u.notifAllowed ? "checked" : ""
-        } />
+                <input type="checkbox" class="admin-allowed-cb" data-user-idx="${idx}" ${u.notifAllowed ? "checked" : ""} />
                 <span class="rn-slider"></span>
               </label>
             </div>
@@ -983,13 +878,6 @@ window.POS_REPORT_NOTIF = (function () {
         `;
       })
       .join("");
-
-    wrap.querySelectorAll(".btn-save-admin-user").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.getAttribute("data-user-idx"), 10);
-        handleSaveAdminUserAccess(idx, btn);
-      });
-    });
   }
 
   async function handleSaveAdminUserAccess(userIdx, btnEl) {
@@ -998,13 +886,12 @@ window.POS_REPORT_NOTIF = (function () {
 
     const allowedCb = document.querySelector(`.admin-allowed-cb[data-user-idx="${userIdx}"]`);
     const evCbs = document.querySelectorAll(`.admin-ev-cb[data-user-idx="${userIdx}"]:checked`);
-
     const notifAllowed = allowedCb ? allowedCb.checked : false;
     const notifEvents = Array.from(evCbs).map((el) => el.value);
 
     if (btnEl) btnEl.disabled = true;
     try {
-      const res = await window.POS_API.kelolaAksesNotifAdmin({
+      const res = await callApi("kelolaAksesNotifAdmin", {
         mode: "UPDATE",
         targetUsername: user.username,
         notifAllowed,
@@ -1020,7 +907,6 @@ window.POS_REPORT_NOTIF = (function () {
       user.notifEvents = notifEvents;
       showToast(res.pesan || `Akses ${user.username} diperbarui.`, "success");
 
-      // Jika Admin mengubah akunnya sendiri, refresh juga panel Sakelar Saya
       const session = getSession();
       if (session && session.username === user.username) {
         await pollNotifInApp(false);
@@ -1034,88 +920,113 @@ window.POS_REPORT_NOTIF = (function () {
   }
 
   // ==========================================================================
-  // BINDING EVENT & AUTO-LOAD MUTATION OBSERVER (ANTI-BUG FASE 3 & 4)
+  // EVENT DELEGATION GLOBAL (TOMBOL PASTI MERESPONS 100%)
   // ==========================================================================
 
-  function bindEvents() {
-    // Pemilih Cabang Besar Laporan Bos
-    document.querySelectorAll(".bos-cabang-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.bosCabang = btn.getAttribute("data-cabang") || "all";
+  function bindGlobalDelegation() {
+    document.addEventListener("click", (e) => {
+      const t = e.target;
+
+      // 1. Pilih Cabang Laporan Bos
+      const cabangBtn = t.closest(".bos-cabang-btn");
+      if (cabangBtn) {
+        state.bosCabang = cabangBtn.getAttribute("data-cabang") || "all";
         syncBosFilterUI();
         loadLaporanBos();
-      });
-    });
+        return;
+      }
 
-    // Pemilih Periode 1-Klik Laporan Bos
-    document.querySelectorAll(".bos-periode-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.bosPeriode = btn.getAttribute("data-periode") || "hari_ini";
+      // 2. Pilih Periode Laporan Bos
+      const periodeBtn = t.closest(".bos-periode-btn");
+      if (periodeBtn) {
+        state.bosPeriode = periodeBtn.getAttribute("data-periode") || "hari_ini";
         syncBosFilterUI();
-        if (state.bosPeriode !== "pilih_bulan") {
-          loadLaporanBos();
-        }
-      });
-    });
+        if (state.bosPeriode !== "pilih_bulan") loadLaporanBos();
+        return;
+      }
 
-    // Tombol Terapkan Bulan & Input Bulan
-    const btnApplyBulan = document.getElementById("btn-bos-apply-bulan");
-    const inpBulan = document.getElementById("bos-input-bulan");
-    if (btnApplyBulan && inpBulan) {
-      btnApplyBulan.addEventListener("click", () => {
-        state.bosBulan = inpBulan.value || getCurrentMonthStr();
+      // 3. Terapkan Pilih Bulan
+      if (t.closest("#btn-bos-apply-bulan")) {
+        const inp = document.getElementById("bos-input-bulan");
+        state.bosBulan = (inp && inp.value) || getCurrentMonthStr();
         loadLaporanBos();
-      });
-    }
+        return;
+      }
 
-    // Tombol Muat Ulang Laporan Bos
-    const btnRefreshBos = document.getElementById("btn-bos-refresh");
-    if (btnRefreshBos) {
-      btnRefreshBos.addEventListener("click", () => {
+      // 4. Refresh Laporan Bos
+      if (t.closest("#btn-bos-refresh")) {
         loadLaporanBos();
-      });
-    }
+        return;
+      }
 
-    // Filter Tipe Cari Rekap & Tombol Cari
-    document.querySelectorAll(".bos-search-tipe-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.searchTipe = btn.getAttribute("data-tipe") || "semua";
-        document.querySelectorAll(".bos-search-tipe-btn").forEach((b) => {
-          b.classList.toggle("active", b === btn);
-        });
-      });
-    });
+      // 5. Tipe Search Rekap
+      const tipeBtn = t.closest(".bos-search-tipe-btn");
+      if (tipeBtn) {
+        state.searchTipe = tipeBtn.getAttribute("data-tipe") || "semua";
+        document.querySelectorAll(".bos-search-tipe-btn").forEach((b) => b.classList.toggle("active", b === tipeBtn));
+        return;
+      }
 
-    const btnCari = document.getElementById("btn-bos-search");
-    const inpCari = document.getElementById("bos-search-keyword");
-    if (btnCari) {
-      btnCari.addEventListener("click", jalankanCariRekapBos);
-    }
-    if (inpCari) {
-      inpCari.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          jalankanCariRekapBos();
-        }
-      });
-    }
+      // 6. Tombol Cari Rekap
+      if (t.closest("#btn-bos-search")) {
+        jalankanCariRekapBos();
+        return;
+      }
 
-    // Lonceng Topbar -> Buka Halaman Notifikasi
-    const bellBtn = document.getElementById("btn-topbar-notif");
-    if (bellBtn) {
-      bellBtn.addEventListener("click", () => {
+      // 7. Tombol Lonceng Topbar
+      if (t.closest("#btn-topbar-notif")) {
         navigateToPage("page-notifikasi");
-        loadNotifPage();
-      });
-    }
+        setTimeout(() => loadNotifPage(), 80);
+        return;
+      }
 
-    // Tombol Muat Ulang Riwayat Notifikasi
-    const btnRefreshNotif = document.getElementById("btn-notif-refresh");
-    if (btnRefreshNotif) {
-      btnRefreshNotif.addEventListener("click", () => {
+      // 8. Refresh Notifikasi
+      if (t.closest("#btn-notif-refresh")) {
         loadNotifPage();
-      });
-    }
+        return;
+      }
+
+      // 9. Simpan & Tes Notifikasi Saya
+      const btnSaveMy = t.closest("#btn-save-my-notif");
+      if (btnSaveMy) {
+        handleSaveMyNotifPref(btnSaveMy);
+        return;
+      }
+      const btnTestMy = t.closest("#btn-test-my-telegram");
+      if (btnTestMy) {
+        handleTestMyTelegram(btnTestMy);
+        return;
+      }
+
+      // 10. Simpan Akses Admin
+      const btnAdmin = t.closest(".btn-save-admin-user");
+      if (btnAdmin) {
+        const idx = parseInt(btnAdmin.getAttribute("data-user-idx"), 10);
+        handleSaveAdminUserAccess(idx, btnAdmin);
+        return;
+      }
+
+      // 11. Cadangan klik menu sidebar langsung (jika router tidak memakai class 'active')
+      const menuLink = t.closest('[data-page="page-laporan-bos"], [data-target="page-laporan-bos"]');
+      if (menuLink) {
+        setTimeout(() => {
+          syncBosFilterUI();
+          loadLaporanBos();
+        }, 120);
+        return;
+      }
+      const notifLink = t.closest('[data-page="page-notifikasi"], [data-target="page-notifikasi"]');
+      if (notifLink) {
+        setTimeout(() => loadNotifPage(), 120);
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target && e.target.id === "bos-search-keyword") {
+        e.preventDefault();
+        jalankanCariRekapBos();
+      }
+    });
   }
 
   function observePages() {
@@ -1152,16 +1063,20 @@ window.POS_REPORT_NOTIF = (function () {
           : "all";
     }
 
-    bindEvents();
+    bindGlobalDelegation();
     syncBosFilterUI();
     observePages();
 
-    // Mulai polling lonceng jika user sudah login
     if (session && session.token) {
       startNotifPolling();
     }
 
-    // Jika aplikasi baru login, mulai polling saat tab menjadi aktif
+    // Jika salah satu halaman sudah aktif saat halaman baru selesai muat
+    const bosSec = document.getElementById("page-laporan-bos");
+    const notifSec = document.getElementById("page-notifikasi");
+    if (bosSec && bosSec.classList.contains("active")) loadLaporanBos();
+    if (notifSec && notifSec.classList.contains("active")) loadNotifPage();
+
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && getSession()) {
         pollNotifInApp(true);
