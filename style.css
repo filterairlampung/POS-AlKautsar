@@ -2275,3 +2275,10 @@ td {
   color: #b91c1c;
 }
 .offline-item-actions { margin-top: 8px; text-align: right; }
+/* Perbaikan tampilkan modal Fase 3 (.show) */
+.modal-overlay.show {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
