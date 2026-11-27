@@ -286,6 +286,72 @@ window.POS_API = (function () {
       clientRequestId: clientRequestId || generateClientRequestId("CAL")
     });
   }
+  // ==========================================================================
+  // WRAPPER TAMBAHAN FASE 4 (PROYEK DAMIU & MUTASI ANTAR CABANG)
+  // ==========================================================================
+
+  function getDaftarProyekDAMIU(payload = {}) {
+    return request("getDaftarProyekDAMIU", payload);
+  }
+
+  function simpanProyekDAMIU(payload = {}, clientRequestId) {
+    return request("simpanProyekDAMIU", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("DMI")
+    });
+  }
+
+  function tambahBiayaDAMIU(payload = {}, clientRequestId) {
+    return request("tambahBiayaDAMIU", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("BDM"),
+      timeoutMs: 45000 // Toleransi ekstra untuk unggah foto nota ke Google Drive
+    });
+  }
+
+  function reimburseTalanganDAMIU(payload = {}, clientRequestId) {
+    return request("reimburseTalanganDAMIU", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("RMB")
+    });
+  }
+
+  function catatPembayaranDAMIU(payload = {}, clientRequestId) {
+    return request("catatPembayaranDAMIU", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("DMP")
+    });
+  }
+
+  function selesaikanProyekDAMIU(payload = {}, clientRequestId) {
+    return request("selesaikanProyekDAMIU", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("DMS")
+    });
+  }
+
+  function voidProyekAtauBiayaDAMIU(payload = {}, clientRequestId) {
+    return request("voidProyekAtauBiayaDAMIU", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("VDM")
+    });
+  }
+
+  function getMutasiAntarCabang(payload = {}) {
+    return request("getMutasiAntarCabang", payload);
+  }
+
+  function buatMutasiAntarCabang(payload = {}, clientRequestId) {
+    return request("buatMutasiAntarCabang", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("MTC")
+    });
+  }
+
+  function terimaMutasiAntarCabang(payload = {}, clientRequestId) {
+    return request("terimaMutasiAntarCabang", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("MTR")
+    });
+  }
+
+  function batalMutasiAntarCabang(payload = {}, clientRequestId) {
+    return request("batalMutasiAntarCabang", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("MTB")
+    });
+  }
 
   return {
     generateClientRequestId,
@@ -313,6 +379,18 @@ window.POS_API = (function () {
     mulaiPengantaran,
     submitSelesaiPengantaran,
     verifikasiSetoranSupir,
-    sinkronCalendar
+    sinkronCalendar,
+    getDaftarProyekDAMIU,
+    simpanProyekDAMIU,
+    tambahBiayaDAMIU,
+    reimburseTalanganDAMIU,
+    catatPembayaranDAMIU,
+    selesaikanProyekDAMIU,
+    voidProyekAtauBiayaDAMIU,
+    getMutasiAntarCabang,
+    buatMutasiAntarCabang,
+    terimaMutasiAntarCabang,
+    batalMutasiAntarCabang
+
   };
 })();

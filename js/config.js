@@ -14,7 +14,7 @@ window.POS_CONFIG = (function () {
   const GAS_WEB_APP_URL =
     "https://script.google.com/macros/s/AKfycbznGxMHlmgwmbo_-X1aiL79ILHtktME6q4NXgFfvfdzYterPTc7oktPKgpA1t6XmZtP1w/exec";
 
-  const APP_VERSION = "3.1.0-staging";
+  const APP_VERSION = "3.2.0-staging";
   const SESSION_STORAGE_KEY = "pos_alkautsar_v3_session";
   const IOS_BANNER_DISMISS_KEY = "pos_alkautsar_v3_ios_banner_dismissed";
   const OFFLINE_QUEUE_STORAGE_KEY = "pos_alkautsar_v3_offline_queue";
@@ -67,7 +67,9 @@ window.POS_CONFIG = (function () {
       { code: "401-PENJUALAN", label: "401 - Penjualan Kasir / Ritel" },
       { code: "112-PIUTANG", label: "112 - Pelunasan Piutang Pelanggan" },
       { code: "409-PEMASUKAN_LAIN", label: "409 - Pemasukan Lain-lain" },
-      { code: "199-MUTASI_CABANG", label: "199 - Mutasi Kas Antar Cabang (Masuk)" }
+      { code: "199-MUTASI_CABANG", label: "199 - Mutasi Kas Antar Cabang (Masuk)" },
+      { code: "402-OMZET_DAMIU", label: "402 - Omzet Proyek Pemasangan DAMIU" },
+      { code: "502-BIAYA_PROYEK", label: "502 - Biaya Proyek DAMIU / Jasa Tukang" }
     ],
     Pengeluaran: [
       { code: "601-OPERASIONAL", label: "601 - Biaya Operasional Toko (Bensin, Listrik, Makan)" },
@@ -173,7 +175,7 @@ window.POS_CONFIG = (function () {
       requireOperationalBranch: true
     },
 
-    // --- FASE 4–6: MODUL LANJUTAN (KERANGKA RBAC SIAP ISI) ---
+    // --- FASE 4: PROYEK DAMIU & MUTASI ANTAR CABANG (AKTIF) ---
     {
       id: "page-damiu",
       label: "Proyek DAMIU",
@@ -181,9 +183,8 @@ window.POS_CONFIG = (function () {
       group: "Distribusi & Proyek",
       roles: ["Manajer", "Bos", "Admin"],
       phase: 4,
-      implemented: false,
-      placeholderDesc:
-        "Pencatatan pemasangan Depot Air Minum Isi Ulang (DAMIU) yang menggabungkan stok internal toko + pembelian barang eksternal/ad-hoc beserta kalkulasi HPP & margin proyek."
+      implemented: true,
+      requireOperationalBranch: true
     },
     {
       id: "page-mutasi-cabang",
@@ -192,9 +193,7 @@ window.POS_CONFIG = (function () {
       group: "Distribusi & Proyek",
       roles: ["Manajer", "Bos", "Admin"],
       phase: 4,
-      implemented: false,
-      placeholderDesc:
-        "Transfer stok dan perpindahan kas terintegrasi antara Cabang Korpri dan Cabang Pringsewu dengan verifikasi penerima."
+      implemented: true
     },
     {
       id: "page-laporan-bos",

@@ -831,6 +831,74 @@
             </div>
           </section>
 
+          <!-- ====================================================================== -->
+          <!-- HALAMAN FASE 4: PROYEK PEMASANGAN DAMIU                                -->
+          <!-- ====================================================================== -->
+          <section id="page-damiu" class="page-section" style="display: none;">
+            <div class="dm-page-header">
+              <div>
+                <h2><i class="fa-solid fa-water"></i> Proyek Pemasangan DAMIU</h2>
+                <p class="dm-muted">1 Proyek = 1 Cabang pelaksana utama. Gabungkan stok toko, beli luar, talangan, & termin customer.</p>
+              </div>
+              <div class="dm-header-actions">
+                <button type="button" id="btn-refresh-damiu" class="btn-secondary">
+                  <i class="fa-solid fa-rotate"></i> Muat Ulang
+                </button>
+                <button type="button" id="btn-buat-proyek-damiu" class="btn-primary">
+                  <i class="fa-solid fa-plus"></i> Proyek Baru
+                </button>
+              </div>
+            </div>
+
+            <div id="damiu-summary-cards" class="dm-summary-grid"></div>
+
+            <div class="dm-filter-bar">
+              <select id="damiu-filter-status" class="dm-input">
+                <option value="">Semua Status</option>
+                <option value="PENAWARAN">Penawaran</option>
+                <option value="PROSES">Proses</option>
+                <option value="SELESAI">Selesai</option>
+                <option value="BATAL">Batal</option>
+              </select>
+              <input type="text" id="damiu-filter-keyword" class="dm-input" placeholder="Cari ID proyek, nama pelanggan, alamat... (Enter)">
+            </div>
+
+            <div id="damiu-list-container" class="dm-card-list"></div>
+          </section>
+
+          <!-- ====================================================================== -->
+          <!-- HALAMAN FASE 4: MUTASI ANTAR CABANG (KORPRI <-> PRINGSEWU)             -->
+          <!-- ====================================================================== -->
+          <section id="page-mutasi-cabang" class="page-section" style="display: none;">
+            <div class="dm-page-header">
+              <div>
+                <h2><i class="fa-solid fa-right-left"></i> Mutasi Antar Cabang</h2>
+                <p class="dm-muted">Transfer stok multi-item & mutasi kas (COA 199-MUTASI_CABANG) antara Korpri & Pringsewu.</p>
+              </div>
+              <div class="dm-header-actions">
+                <button type="button" id="btn-refresh-mutasi" class="btn-secondary">
+                  <i class="fa-solid fa-rotate"></i> Muat Ulang
+                </button>
+                <button type="button" id="btn-open-modal-mutasi" class="btn-primary">
+                  <i class="fa-solid fa-paper-plane"></i> Buat Mutasi Baru
+                </button>
+              </div>
+            </div>
+
+            <div class="dm-tabs-bar">
+              <button type="button" id="mutasi-tab-btn-masuk" class="dm-tab-btn active" onclick="window.POS_DAMIU_MUTASI.switchMutasiTab('MASUK')">
+                Antrean Masuk <span id="badge-mutasi-masuk" class="dm-tab-badge">0</span>
+              </button>
+              <button type="button" id="mutasi-tab-btn-keluar" class="dm-tab-btn" onclick="window.POS_DAMIU_MUTASI.switchMutasiTab('KELUAR')">
+                Mutasi Dikirim <span id="badge-mutasi-keluar" class="dm-tab-badge">0</span>
+              </button>
+              <button type="button" id="mutasi-tab-btn-riwayat" class="dm-tab-btn" onclick="window.POS_DAMIU_MUTASI.switchMutasiTab('RIWAYAT')">
+                Riwayat Selesai/Batal <span id="badge-mutasi-riwayat" class="dm-tab-badge">0</span>
+              </button>
+            </div>
+
+            <div id="mutasi-list-container" class="dm-card-list"></div>
+          </section>
           <!-- ============================================================ -->
           <!-- PAGE KERANGKA MODUL FASE 3 - 6 (TERKONTROL RBAC)             -->
           <!-- ============================================================ -->
@@ -1382,6 +1450,422 @@
         </button>
       </div>
     </div>
+        <!-- MODAL 1: BUAT / EDIT HEADER PROYEK DAMIU -->
+    <div id="modal-proyek-damiu" class="modal-overlay" style="display: none;">
+      <div class="modal-content dm-modal-lg">
+        <div class="modal-header">
+          <h3 id="damiu-modal-title">Buat Proyek DAMIU Baru</h3>
+          <button type="button" class="modal-close" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-proyek-damiu')">&times;</button>
+        </div>
+        <form id="form-proyek-damiu" class="dm-form">
+          <input type="hidden" id="damiu-proyek-id">
+          <div class="dm-form-row">
+            <div class="dm-field">
+              <label>Ambil dari Direktori Pelanggan (Opsional)</label>
+              <select id="damiu-pelanggan-id" class="dm-input"></select>
+            </div>
+            <div class="dm-field">
+              <label>Status Proyek</label>
+              <select id="damiu-status" class="dm-input">
+                <option value="PENAWARAN">PENAWARAN</option>
+                <option value="PROSES">PROSES</option>
+                <option value="SELESAI">SELESAI</option>
+                <option value="BATAL">BATAL</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-field">
+              <label>Nama Pelanggan *</label>
+              <input type="text" id="damiu-nama-pelanggan" class="dm-input" required placeholder="Contoh: Bpk. Hendra">
+            </div>
+            <div class="dm-field">
+              <label>No. WhatsApp</label>
+              <input type="text" id="damiu-no-wa" class="dm-input" placeholder="0812xxxxxxxx">
+            </div>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-field">
+              <label>Nama / Paket Proyek DAMIU *</label>
+              <input type="text" id="damiu-nama-proyek" class="dm-input" required placeholder="Contoh: Paket DAMIU RO 2000 GPD + 2 Lemari">
+            </div>
+            <div class="dm-field">
+              <label>Nilai Kontrak (Rp) *</label>
+              <input type="number" id="damiu-nilai-kontrak" class="dm-input" required min="0" placeholder="25000000">
+            </div>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-field">
+              <label>Tanggal Target Pemasangan (Sync Calendar)</label>
+              <input type="date" id="damiu-tanggal-target" class="dm-input" required>
+            </div>
+            <div class="dm-field">
+              <label>Jam Target</label>
+              <input type="time" id="damiu-waktu-target" class="dm-input" value="09:00">
+            </div>
+          </div>
+
+          <div class="dm-field">
+            <label>Alamat Lokasi Pemasangan</label>
+            <input type="text" id="damiu-alamat-pasang" class="dm-input" placeholder="Alamat lengkap lokasi depot">
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-field">
+              <label>Link Google Maps</label>
+              <input type="url" id="damiu-maps-url" class="dm-input" placeholder="https://maps.google.com/...">
+            </div>
+            <div class="dm-field">
+              <label>Catatan Proyek</label>
+              <input type="text" id="damiu-catatan" class="dm-input" placeholder="Spesifikasi tambahan / catatan teknisi">
+            </div>
+          </div>
+
+          <div class="dm-modal-footer">
+            <button type="button" class="btn-secondary" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-proyek-damiu')">Batal</button>
+            <button type="submit" id="btn-simpan-proyek-damiu" class="btn-primary">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan Proyek
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: DETAIL & KELOLA PROYEK DAMIU (3 TAB) -->
+    <div id="modal-detail-damiu" class="modal-overlay" style="display: none;">
+      <div class="modal-content dm-modal-xl">
+        <div class="modal-header">
+          <div>
+            <h3 id="detail-damiu-title">Detail Proyek DAMIU</h3>
+            <div id="detail-damiu-subtitle" class="dm-muted" style="font-size:12px;"></div>
+          </div>
+          <button type="button" class="modal-close" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-detail-damiu')">&times;</button>
+        </div>
+
+        <div class="dm-tabs-bar">
+          <button type="button" id="damiu-tab-btn-biaya" class="dm-tab-btn active" onclick="window.POS_DAMIU_MUTASI.switchDetailTab('biaya')">
+            1. Biaya & Material
+          </button>
+          <button type="button" id="damiu-tab-btn-bayar" class="dm-tab-btn" onclick="window.POS_DAMIU_MUTASI.switchDetailTab('bayar')">
+            2. Pembayaran Termin
+          </button>
+          <button type="button" id="damiu-tab-btn-margin" class="dm-tab-btn" onclick="window.POS_DAMIU_MUTASI.switchDetailTab('margin')">
+            3. Margin & Finalisasi
+          </button>
+        </div>
+
+        <!-- TAB 1: BIAYA & MATERIAL -->
+        <div id="damiu-tab-panel-biaya" class="dm-tab-panel">
+          <form id="form-tambah-biaya-damiu" class="dm-subform">
+            <div class="dm-form-row">
+              <div class="dm-field">
+                <label>Tanggal</label>
+                <input type="date" id="biaya-tanggal" class="dm-input" required>
+              </div>
+              <div class="dm-field">
+                <label>Sumber Item *</label>
+                <select id="biaya-sumber-item" class="dm-input">
+                  <option value="STOK_TOKO">STOK_TOKO (Potong Master Barang + HPP)</option>
+                  <option value="BELI_LUAR">BELI_LUAR (Belanja Material Eksternal)</option>
+                  <option value="JASA_TUKANG">JASA_TUKANG (Upah / Akomodasi Lapangan)</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="biaya-group-stok" class="dm-field">
+              <label>Pilih Barang dari Master Barang Cabang *</label>
+              <select id="biaya-id-barang" class="dm-input"></select>
+            </div>
+
+            <div class="dm-form-row dm-row-4">
+              <div class="dm-field" style="grid-column: span 2;">
+                <label>Nama Item / Jasa *</label>
+                <input type="text" id="biaya-nama-item" class="dm-input" required placeholder="Nama barang atau jasa">
+              </div>
+              <div class="dm-field">
+                <label>Qty *</label>
+                <input type="number" id="biaya-qty" class="dm-input" required min="0.1" step="any" value="1">
+              </div>
+              <div class="dm-field">
+                <label>Satuan</label>
+                <input type="text" id="biaya-satuan" class="dm-input" value="Pcs">
+              </div>
+            </div>
+
+            <div class="dm-form-row">
+              <div class="dm-field">
+                <label>Harga Satuan / HPP (Rp) *</label>
+                <input type="number" id="biaya-harga-satuan" class="dm-input" required min="0">
+              </div>
+              <div class="dm-field">
+                <label>Keterangan</label>
+                <input type="text" id="biaya-keterangan" class="dm-input" placeholder="Opsional">
+              </div>
+            </div>
+
+            <div id="biaya-group-luar" style="display: none;">
+              <div class="dm-form-row">
+                <div class="dm-field">
+                  <label>Sumber Dana *</label>
+                  <select id="biaya-sumber-dana" class="dm-input">
+                    <option value="Kas Laci">Kas Laci (Tunai Fisik Toko)</option>
+                    <option value="Rekening Toko">Rekening Toko</option>
+                    <option value="Rekening Bunda">Rekening Bunda</option>
+                    <option value="Talangan">Talangan (Belum Memotong Kas Toko)</option>
+                  </select>
+                </div>
+                <div class="dm-field">
+                  <label>Kode COA</label>
+                  <select id="biaya-kode-coa" class="dm-input">
+                    <option value="502-BIAYA_PROYEK">502-BIAYA_PROYEK (Biaya Proyek / Tukang)</option>
+                    <option value="501-BELANJA_STOK">501-BELANJA_STOK (Belanja Bahan/Stok)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="biaya-group-talangan" class="dm-field" style="display: none;">
+                <label>Nama Pemilik Dana Talangan</label>
+                <input type="text" id="biaya-talangan-oleh" class="dm-input" placeholder="Contoh: Ayah / Vais / Teknisi">
+              </div>
+
+              <div class="dm-field">
+                <label>Foto Nota Belanja Luar (Otomatis Kompres &lt; 200 KB ke Drive)</label>
+                <input type="file" id="biaya-foto-nota" class="dm-input" accept="image/*">
+                <small id="biaya-foto-info" class="dm-muted"></small>
+              </div>
+            </div>
+
+            <button type="submit" id="btn-submit-biaya-damiu" class="btn-primary btn-sm">
+              <i class="fa-solid fa-plus"></i> Tambah Biaya / Material
+            </button>
+          </form>
+
+          <h4 class="dm-section-title">Rincian Biaya & Material Tercatat</h4>
+          <div id="damiu-biaya-list-body" class="dm-line-list"></div>
+        </div>
+
+        <!-- TAB 2: PEMBAYARAN TERMIN CUSTOMER -->
+        <div id="damiu-tab-panel-bayar" class="dm-tab-panel" style="display: none;">
+          <div id="damiu-bayar-sisa-hint" class="dm-inline-alert" style="margin-bottom:12px;"></div>
+          <form id="form-bayar-damiu" class="dm-subform">
+            <div class="dm-form-row">
+              <div class="dm-field">
+                <label>Tanggal Bayar</label>
+                <input type="date" id="bayar-damiu-tanggal" class="dm-input" required>
+              </div>
+              <div class="dm-field">
+                <label>Jenis Pembayaran</label>
+                <input type="text" id="bayar-damiu-jenis" class="dm-input" placeholder="DP / Termin 2 / Pelunasan" value="DP">
+              </div>
+            </div>
+            <div class="dm-form-row">
+              <div class="dm-field">
+                <label>Nominal Bayar (Rp) *</label>
+                <input type="number" id="bayar-damiu-nominal" class="dm-input" required min="1">
+              </div>
+              <div class="dm-field">
+                <label>Masuk ke Akun Kas *</label>
+                <select id="bayar-damiu-akun" class="dm-input">
+                  <option value="Kas Laci">Kas Laci</option>
+                  <option value="Rekening Toko">Rekening Toko</option>
+                  <option value="Rekening Bunda" selected>Rekening Bunda</option>
+                </select>
+              </div>
+            </div>
+            <div class="dm-form-row">
+              <div class="dm-field">
+                <label>Kode COA</label>
+                <select id="bayar-damiu-coa" class="dm-input">
+                  <option value="402-OMZET_DAMIU">402-OMZET_DAMIU</option>
+                  <option value="401-PENJUALAN">401-PENJUALAN</option>
+                </select>
+              </div>
+              <div class="dm-field">
+                <label>Keterangan</label>
+                <input type="text" id="bayar-damiu-keterangan" class="dm-input" placeholder="Transfer Mandiri / Tunai">
+              </div>
+            </div>
+            <button type="submit" id="btn-submit-bayar-damiu" class="btn-primary btn-sm">
+              <i class="fa-solid fa-cash-register"></i> Catat Pembayaran Customer
+            </button>
+          </form>
+
+          <h4 class="dm-section-title">Riwayat Pembayaran Customer</h4>
+          <div id="damiu-bayar-list-body" class="dm-line-list"></div>
+        </div>
+
+        <!-- TAB 3: MARGIN REAL-TIME & FINALISASI -->
+        <div id="damiu-tab-panel-margin" class="dm-tab-panel" style="display: none;">
+          <div id="damiu-margin-breakdown"></div>
+          <div class="dm-final-actions">
+            <button type="button" id="btn-selesaikan-proyek-damiu" class="btn-primary">
+              Tandai Proyek SELESAI (+Update Calendar)
+            </button>
+            <button type="button" id="btn-void-proyek-damiu" class="btn-danger-outline">
+              <i class="fa-solid fa-ban"></i> Void Seluruh Proyek (Soft-Delete + Reversal)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: REIMBURSE TALANGAN DAMIU -->
+    <div id="modal-reimburse-damiu" class="modal-overlay" style="display: none;">
+      <div class="modal-content dm-modal-sm">
+        <div class="modal-header">
+          <h3>Reimburse Dana Talangan</h3>
+          <button type="button" class="modal-close" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-reimburse-damiu')">&times;</button>
+        </div>
+        <form id="form-reimburse-damiu" class="dm-form">
+          <input type="hidden" id="reimburse-biaya-id">
+          <p id="reimburse-info-text" class="dm-muted"></p>
+          <div class="dm-field">
+            <label>Tanggal Reimburse</label>
+            <input type="date" id="reimburse-tanggal" class="dm-input" required>
+          </div>
+          <div class="dm-field">
+            <label>Diganti dari Akun Kas *</label>
+            <select id="reimburse-akun-kas" class="dm-input">
+              <option value="Kas Laci">Kas Laci</option>
+              <option value="Rekening Toko">Rekening Toko</option>
+              <option value="Rekening Bunda">Rekening Bunda</option>
+            </select>
+          </div>
+          <div class="dm-field">
+            <label>Catatan</label>
+            <input type="text" id="reimburse-catatan" class="dm-input" placeholder="Opsional">
+          </div>
+          <div class="dm-modal-footer">
+            <button type="button" class="btn-secondary" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-reimburse-damiu')">Batal</button>
+            <button type="submit" id="btn-konfirmasi-reimburse" class="btn-primary">Konfirmasi Reimburse</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 4: BUAT MUTASI ANTAR CABANG -->
+    <div id="modal-buat-mutasi" class="modal-overlay" style="display: none;">
+      <div class="modal-content dm-modal-lg">
+        <div class="modal-header">
+          <h3>Buat Mutasi Antar Cabang</h3>
+          <button type="button" class="modal-close" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-buat-mutasi')">&times;</button>
+        </div>
+        <form id="form-buat-mutasi" class="dm-form">
+          <input type="hidden" id="mutasi-cabang-tujuan">
+          <div class="dm-route-banner">
+            <span>Cabang Asal: <strong id="mutasi-asal-label">-</strong></span>
+            <i class="fa-solid fa-arrow-right"></i>
+            <span>Cabang Tujuan: <strong id="mutasi-tujuan-label">-</strong></span>
+          </div>
+
+          <div class="dm-form-row">
+            <div class="dm-field">
+              <label>Tipe Mutasi *</label>
+              <select id="mutasi-tipe" class="dm-input">
+                <option value="STOK">STOK (Transfer Barang Multi-Item)</option>
+                <option value="KAS">KAS (Transfer Kas — COA 199-MUTASI_CABANG)</option>
+              </select>
+            </div>
+            <div class="dm-field">
+              <label>Tanggal Kirim</label>
+              <input type="date" id="mutasi-tanggal-kirim" class="dm-input" required>
+            </div>
+          </div>
+
+          <!-- SECTION STOK -->
+          <div id="mutasi-section-stok" class="dm-subform">
+            <div class="dm-form-row">
+              <div class="dm-field" style="flex:2;">
+                <label>Pilih Barang (Stok Cabang Asal)</label>
+                <select id="mutasi-picker-barang" class="dm-input"></select>
+              </div>
+              <div class="dm-field" style="max-width:110px;">
+                <label>Qty</label>
+                <input type="number" id="mutasi-picker-qty" class="dm-input" min="1" value="1">
+              </div>
+              <div class="dm-field" style="align-self:flex-end;">
+                <button type="button" id="btn-add-mutasi-item" class="btn-secondary">
+                  <i class="fa-solid fa-plus"></i> Tambah
+                </button>
+              </div>
+            </div>
+            <div id="mutasi-cart-list" class="dm-cart-box"></div>
+          </div>
+
+          <!-- SECTION KAS -->
+          <div id="mutasi-section-kas" class="dm-subform" style="display: none;">
+            <div class="dm-form-row">
+              <div class="dm-field">
+                <label>Akun Kas Asal *</label>
+                <select id="mutasi-akun-asal" class="dm-input">
+                  <option value="Kas Laci">Kas Laci</option>
+                  <option value="Rekening Toko">Rekening Toko</option>
+                  <option value="Rekening Bunda">Rekening Bunda</option>
+                </select>
+              </div>
+              <div class="dm-field">
+                <label>Target Akun Kas Tujuan *</label>
+                <select id="mutasi-akun-tujuan" class="dm-input">
+                  <option value="Kas Laci">Kas Laci</option>
+                  <option value="Rekening Toko">Rekening Toko</option>
+                  <option value="Rekening Bunda">Rekening Bunda</option>
+                </select>
+              </div>
+            </div>
+            <div class="dm-field">
+              <label>Nominal Transfer Kas (Rp) *</label>
+              <input type="number" id="mutasi-nominal-kas" class="dm-input" min="1" placeholder="1000000">
+              <small class="dm-muted">Dicatat dengan COA <strong>199-MUTASI_CABANG</strong> (tidak menambah Omzet/Pengeluaran Ops).</small>
+            </div>
+          </div>
+
+          <div class="dm-field">
+            <label>Keterangan / Nama Kurir</label>
+            <input type="text" id="mutasi-keterangan" class="dm-input" placeholder="Contoh: Dibawa Vais untuk stok proyek DAMIU">
+          </div>
+
+          <div class="dm-modal-footer">
+            <button type="button" class="btn-secondary" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-buat-mutasi')">Batal</button>
+            <button type="submit" id="btn-submit-buat-mutasi" class="btn-primary">
+              <i class="fa-solid fa-paper-plane"></i> Kirim Mutasi Sekarang
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 5: VERIFIKASI & TERIMA MUTASI -->
+    <div id="modal-terima-mutasi" class="modal-overlay" style="display: none;">
+      <div class="modal-content dm-modal-sm">
+        <div class="modal-header">
+          <h3>Verifikasi Penerimaan Mutasi</h3>
+          <button type="button" class="modal-close" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-terima-mutasi')">&times;</button>
+        </div>
+        <form id="form-terima-mutasi" class="dm-form">
+          <input type="hidden" id="terima-mutasi-id">
+          <p id="terima-mutasi-summary" class="dm-muted"></p>
+          <div class="dm-field">
+            <label>Tanggal Diterima</label>
+            <input type="date" id="terima-mutasi-tanggal" class="dm-input" required>
+          </div>
+          <div id="terima-mutasi-group-akun" class="dm-field" style="display: none;">
+            <label>Masukkan ke Akun Kas Cabang Ini *</label>
+            <select id="terima-mutasi-akun-tujuan" class="dm-input">
+              <option value="Kas Laci">Kas Laci</option>
+              <option value="Rekening Toko">Rekening Toko</option>
+              <option value="Rekening Bunda">Rekening Bunda</option>
+            </select>
+          </div>
+          <div class="dm-modal-footer">
+            <button type="button" class="btn-secondary" onclick="window.POS_DAMIU_MUTASI.closeModal('modal-terima-mutasi')">Batal</button>
+            <button type="submit" id="btn-konfirmasi-terima-mutasi" class="btn-primary">Verifikasi & Terima</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
   </div>
 
@@ -1395,5 +1879,6 @@
   <script src="./js/receipt.js"></script>
   <script src="./js/retail.js"></script>
   <script src="./js/driver_customer.js"></script>
+  <script src="./js/damiu_mutasi.js"></script>
 </body>
 </html>
