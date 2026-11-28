@@ -14,7 +14,7 @@ window.POS_CONFIG = (function () {
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
-  const GAS_WEB_APP_URL_PROD = "TEMPEL_URL_WEB_APP_PRODUCTION_DI_SINI";
+  const GAS_WEB_APP_URL_PROD = "https://script.google.com/macros/s/AKfycbyWNkKQ211W6a3qDbRoiyDIDCZAxNmViBinnOtp35KbJvF6HQovtBNEbhKLjL_fGaFy/exec";
   const GAS_WEB_APP_URL_STAGING =
     "https://script.google.com/macros/s/AKfycbznGxMHlmgwmbo_-X1aiL79ILHtktME6q4NXgFfvfdzYterPTc7oktPKgpA1t6XmZtP1w/exec";
 
