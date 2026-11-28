@@ -38,6 +38,7 @@ window.POS_RETAIL = (function () {
     riwayatTab: "trx",
     riwayatTrx: [],
     riwayatKas: [],
+    ringkasanKolomUang: null,
     // Cache lokal sesi untuk fallback pratinjau jika handler baca riwayat belum dipasang
     localSessionTrx: [],
     localSessionKas: [],
@@ -279,6 +280,7 @@ window.POS_RETAIL = (function () {
       renderHargaKhusus();
     } else if (pageId === "page-arus-kas") {
       populateCoaOptions();
+      loadKolomUangArusKas();
     } else if (pageId === "page-mutasi-stok") {
       renderMutasiSelect();
       updateMutasiPreview();
@@ -832,7 +834,8 @@ window.POS_RETAIL = (function () {
     if (metode === "Tunai") {
       akunEl.value = "Kas Laci";
     } else {
-      akunEl.value = "Rekening Bunda";
+      // Korpri -> Rekening Toko; Pringsewu -> Rekening Bunda (tetap bisa diubah manual)
+      akunEl.value = state.cabang === "korpri" ? "Rekening Toko" : "Rekening Bunda";
     }
   }
 
@@ -1139,7 +1142,160 @@ window.POS_RETAIL = (function () {
       .map((c) => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.label)}</option>`)
       .join("");
   }
+async function loadKolomUangArusKas() {
+    const container = document.getElementById("arus-kas-kolom-uang");
+    const sess = window.POS_AUTH.getSession();
+    const activeRole = sess ? sess.activeRole : "";
 
+    if (!isOperationalBranch()) {
+      if (container) {
+        container.innerHTML =
+          '<p class="empty-state-text">Pilih cabang Korpri atau Pringsewu untuk melihat Kolom Uang.</p>';
+      }
+      return;
+    }
+
+    const todayIso = getTodayWibIso();
+    const tglMulaiEl = document.getElementById("arus-kas-tgl-mulai");
+    const tglAkhirEl = document.getElementById("arus-kas-tgl-akhir");
+
+    if (tglMulaiEl && !tglMulaiEl.value) tglMulaiEl.value = todayIso;
+    if (tglAkhirEl && !tglAkhirEl.value) tglAkhirEl.value = todayIso;
+
+    const tglMulaiIso = tglMulaiEl ? tglMulaiEl.value : todayIso;
+    const tglAkhirIso = tglAkhirEl ? tglAkhirEl.value : tglMulaiIso;
+
+    if (container) {
+      container.innerHTML =
+        '<p class="empty-state-text"><i class="fas fa-spinner fa-spin"></i> Menghitung posisi kas &amp; pergerakan periode...</p>';
+    }
+
+    const res = await window.POS_API.getRiwayatOperasional({
+      tglMulai: isoToDmy(tglMulaiIso),
+      tglAkhir: isoToDmy(tglAkhirIso),
+      limit: 10
+    });
+
+    if (!res.sukses || !res.data || !res.data.ringkasanKolomUang) {
+      if (container) {
+        container.innerHTML = `<p class="empty-state-text">${escapeHtml(
+          (res && res.pesan) || "Ringkasan Kolom Uang belum tersedia dari server."
+        )}</p>`;
+      }
+      return;
+    }
+
+    state.ringkasanKolomUang = res.data.ringkasanKolomUang;
+    renderKolomUangArusKas(state.ringkasanKolomUang, state.cabang, activeRole);
+  }
+
+  function renderKolomUangArusKas(ringkasan, cabangAktif, activeRole) {
+    const container = document.getElementById("arus-kas-kolom-uang");
+    if (!container) return; // Aman sebelum HTML Mini-Patch B dipasang
+
+    if (!ringkasan || !ringkasan.posisiKasToko || !ringkasan.pergerakanPeriode) {
+      container.innerHTML =
+        '<p class="empty-state-text">Data Kolom Uang belum tersedia.</p>';
+      return;
+    }
+
+    const cb = String(cabangAktif || state.cabang || "").toLowerCase();
+    const posisi = ringkasan.posisiKasToko;
+    const gerak = ringkasan.pergerakanPeriode;
+    const bunda = gerak.uangKeBunda || {};
+    const mutasi = gerak.mutasiCabang || {};
+    const periode = ringkasan.periode || {};
+
+    const periodeLabel =
+      periode.tglMulai && periode.tglAkhir && periode.tglMulai !== periode.tglAkhir
+        ? `${escapeHtml(periode.tglMulai)} s/d ${escapeHtml(periode.tglAkhir)}`
+        : escapeHtml(periode.tglMulai || isoToDmy(getTodayWibIso()));
+
+    // RBAC & Aturan Cabang untuk Saldo Rekening Toko:
+    // - Sembunyikan jika null/undefined (Karyawan/Supir)
+    // - Di cabang Pringsewu, sembunyikan otomatis bila nilainya 0 (atau null)
+    const hasRekTokoVal =
+      posisi.saldoRekeningToko !== null && posisi.saldoRekeningToko !== undefined;
+    const rekTokoNum = Number(posisi.saldoRekeningToko) || 0;
+    const tampilRekToko = hasRekTokoVal && !(cb === "pringsewu" && rekTokoNum === 0);
+
+    const kartuRekTokoHtml = tampilRekToko
+      ? `
+        <div class="ku-card ku-card-bank">
+          <div class="ku-card-label"><i class="fas fa-building-columns"></i> Saldo Rekening Toko</div>
+          <div class="ku-card-value">${escapeHtml(formatRupiah(rekTokoNum))}</div>
+          <div class="ku-card-sub">Saldo berjalan (akumulasi buku)</div>
+        </div>
+      `
+      : "";
+
+    const showMutasiStrip = (Number(mutasi.masuk) || 0) > 0 || (Number(mutasi.keluar) || 0) > 0;
+    const mutasiNetto = Number(mutasi.netto) || 0;
+    const mutasiStripHtml = showMutasiStrip
+      ? `
+        <div class="ku-mutasi-strip">
+          <div class="ku-mutasi-title">
+            <i class="fas fa-right-left"></i> Info Mutasi Cabang (199-MUTASI_CABANG)
+          </div>
+          <div class="ku-mutasi-metrics">
+            <span>Masuk: <strong>${escapeHtml(formatRupiah(mutasi.masuk))}</strong></span>
+            <span>Keluar: <strong>${escapeHtml(formatRupiah(mutasi.keluar))}</strong></span>
+            <span>Netto: <strong>${mutasiNetto < 0 ? "-" : ""}${escapeHtml(formatRupiah(Math.abs(mutasiNetto)))}</strong></span>
+          </div>
+        </div>
+      `
+      : "";
+
+    container.innerHTML = `
+      <div class="ku-group">
+        <div class="ku-group-header">
+          <h4><i class="fas fa-vault"></i> Posisi Kas Toko (Saldo Berjalan)</h4>
+          <span class="ku-badge-role">${escapeHtml(cb.toUpperCase())} &bull; ${escapeHtml(activeRole || "-")}</span>
+        </div>
+        <div class="ku-grid ku-grid-posisi">
+          <div class="ku-card ku-card-laci">
+            <div class="ku-card-label"><i class="fas fa-cash-register"></i> Sisa Kas Laci</div>
+            <div class="ku-card-value">${escapeHtml(formatRupiah(posisi.sisaKasLaci))}</div>
+            <div class="ku-card-sub">Uang tunai tanggung jawab toko saat ini</div>
+          </div>
+          ${kartuRekTokoHtml}
+        </div>
+      </div>
+
+      <div class="ku-group">
+        <div class="ku-group-header">
+          <h4><i class="fas fa-chart-line"></i> Pergerakan Periode (${periodeLabel})</h4>
+        </div>
+        <div class="ku-grid ku-grid-periode">
+          <div class="ku-card ku-card-in">
+            <div class="ku-card-label">Penjualan Total</div>
+            <div class="ku-card-value">${escapeHtml(formatRupiah(gerak.penjualanTotal))}</div>
+            <div class="ku-card-sub">
+              Tunai: ${escapeHtml(formatRupiah(gerak.penjualanTunai))} &bull; Non-Tunai: ${escapeHtml(formatRupiah(gerak.penjualanNonTunai))}
+            </div>
+          </div>
+          <div class="ku-card ku-card-other">
+            <div class="ku-card-label">Pemasukan Lain</div>
+            <div class="ku-card-value">${escapeHtml(formatRupiah(gerak.pemasukanLain))}</div>
+            <div class="ku-card-sub">Pelunasan Piutang &amp; Pemasukan Lain</div>
+          </div>
+          <div class="ku-card ku-card-out">
+            <div class="ku-card-label">Pengeluaran Toko</div>
+            <div class="ku-card-value">${escapeHtml(formatRupiah(gerak.pengeluaranTotal))}</div>
+            <div class="ku-card-sub">Stok, Proyek, Operasional &amp; Gaji</div>
+          </div>
+          <div class="ku-card ku-card-bunda">
+            <div class="ku-card-label">Uang ke Bunda</div>
+            <div class="ku-card-value">${escapeHtml(formatRupiah(bunda.totalKeBunda))}</div>
+            <div class="ku-card-sub">
+              Setoran: ${escapeHtml(formatRupiah(bunda.setoranToko))} &bull; TF Pelanggan: ${escapeHtml(formatRupiah(bunda.transferLangsungPelanggan))}
+            </div>
+          </div>
+        </div>
+        ${mutasiStripHtml}
+      </div>
+    `;
+  }
   async function submitArusKas(event) {
     event.preventDefault();
     if (state.isSubmittingKas) return;
@@ -1212,6 +1368,7 @@ window.POS_RETAIL = (function () {
     populateCoaOptions();
 
     window.POS_AUTH.showToast(res.pesan || "Arus kas berhasil dicatat.", "success");
+    loadKolomUangArusKas().catch(() => {});
   }
 
   async function submitTutupKas(event) {
@@ -1247,6 +1404,7 @@ window.POS_RETAIL = (function () {
     const tglInput = document.getElementById("tutup-kas-tanggal");
     if (tglInput) tglInput.value = "";
     window.POS_AUTH.showToast(res.pesan || "Tutup Kas berhasil diproses!", "success");
+    loadKolomUangArusKas().catch(() => {});
   }
 
   // ==========================================================================
@@ -1491,6 +1649,11 @@ window.POS_RETAIL = (function () {
         }
         state.riwayatTrx = state.localSessionTrx.filter((x) => x.cabang === state.cabang);
         state.riwayatKas = state.localSessionKas.filter((x) => x.cabang === state.cabang);
+        if (data.ringkasanKolomUang) {
+          state.ringkasanKolomUang = data.ringkasanKolomUang;
+          const sess = window.POS_AUTH.getSession();
+          renderKolomUangArusKas(state.ringkasanKolomUang, state.cabang, sess ? sess.activeRole : "");
+        }
         renderRiwayatTables();
         return;
       }
@@ -1888,6 +2051,8 @@ window.POS_RETAIL = (function () {
 
     // Arus Kas & Tutup Kas
     populateCoaOptions,
+    loadKolomUangArusKas,
+    renderKolomUangArusKas,
     submitArusKas,
     submitTutupKas,
 

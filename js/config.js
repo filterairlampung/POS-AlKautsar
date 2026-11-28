@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * POS AL-KAUTSAR BUMINDO v3.3 — KONFIGURASI FRONTEND STAGING
+ * POS AL-KAUTSAR BUMINDO v3.0 — KONFIGURASI FRONTEND PRODUCTION
  * File: js/config.js
  * ============================================================================
  * ATURAN KEAMANAN: DILARANG menyimpan API Key, Password, atau Spreadsheet ID
@@ -10,11 +10,20 @@
 window.POS_CONFIG = (function () {
   "use strict";
 
-  // Ganti URL di bawah ini dengan Web App URL hasil deploy Google Apps Script Staging
-  const GAS_WEB_APP_URL =
+  const IS_LOCAL_DEV =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
+  const GAS_WEB_APP_URL_PROD = "TEMPEL_URL_WEB_APP_PRODUCTION_DI_SINI";
+  const GAS_WEB_APP_URL_STAGING =
     "https://script.google.com/macros/s/AKfycbznGxMHlmgwmbo_-X1aiL79ILHtktME6q4NXgFfvfdzYterPTc7oktPKgpA1t6XmZtP1w/exec";
 
-  const APP_VERSION = "3.4.0-staging";
+  const GAS_WEB_APP_URL = IS_LOCAL_DEV
+    ? GAS_WEB_APP_URL_STAGING
+    : GAS_WEB_APP_URL_PROD;
+
+  const APP_VERSION = "3.0.0";
+  const ENV_MODE = IS_LOCAL_DEV ? "STAGING" : "PRODUCTION";
   const SESSION_STORAGE_KEY = "pos_alkautsar_v3_session";
   const IOS_BANNER_DISMISS_KEY = "pos_alkautsar_v3_ios_banner_dismissed";
   const OFFLINE_QUEUE_STORAGE_KEY = "pos_alkautsar_v3_offline_queue";
@@ -249,6 +258,7 @@ window.POS_CONFIG = (function () {
     VOID_ALLOWED_ROLES,
     AKUN_KAS_OPTIONS,
     COA_OPTIONS,
-    MENU_ITEMS
+    MENU_ITEMS,
+    ENV_MODE
   };
 })();

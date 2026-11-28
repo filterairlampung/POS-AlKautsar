@@ -1120,12 +1120,36 @@ window.POS_AI_INBOX = (function () {
       .join("");
   }
 
+  async function ensureBranchDataLoaded(targetCabang, targetModule) {
+    // Tunggu reload MASTER BARANG & PELANGGAN cabang tujuan sebelum draft diterapkan
+    if (window.POS_RETAIL) {
+      if (typeof window.POS_RETAIL.loadBootstrapData === "function") {
+        await window.POS_RETAIL.loadBootstrapData(true);
+      } else if (typeof window.POS_RETAIL.refreshBootstrap === "function") {
+        await window.POS_RETAIL.refreshBootstrap(targetCabang);
+      }
+    }
+    if (targetModule === "TUGAS_SUPIR" && window.POS_DRIVER_CUSTOMER) {
+      if (typeof window.POS_DRIVER_CUSTOMER.loadPelanggan === "function") {
+        await window.POS_DRIVER_CUSTOMER.loadPelanggan(true);
+      }
+      if (typeof window.POS_DRIVER_CUSTOMER.loadTugasSupir === "function") {
+        await window.POS_DRIVER_CUSTOMER.loadTugasSupir(true);
+      }
+    }
+  }
+
   async function handleConvertInbox(inboxId, target, btn) {
-    setBtnLoading(btn, true, "Menyiapkan...");
+    setBtnLoading(btn, true, "Mengunci & menyiapkan...");
     try {
-      const res = await callApi("konversiInboxKeDraft", { inboxId, target, markAsProcessing: true });
+      const res = await callApi(
+        "konversiInboxKeDraft",
+        { inboxId, target, markAsProcessing: true },
+        newReqId("INBCONV")
+      );
       if (!res || !res.sukses || !res.data) {
         showToast((res && res.pesan) || "Gagal menyiapkan draft.", "error");
+        await loadInboxQueue();
         return;
       }
 
@@ -1134,37 +1158,37 @@ window.POS_AI_INBOX = (function () {
         sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
       } catch (e) {}
 
-      // Jika cabang aktif saat ini berbeda (mis. sedang di 'all' atau cabang lain), pindah cabang otomatis dulu
+      // Pindah cabang otomatis jika berbeda, lalu WAJIB tunggu reload MASTER BARANG & PELANGGAN selesai
       const session = getSession();
-      if (
+      const switchedBranch = Boolean(
         draft.cabang &&
         session &&
         session.activeCabang !== draft.cabang &&
         window.POS_AUTH &&
         typeof window.POS_AUTH.onBranchSwitch === "function"
-      ) {
+      );
+
+      if (switchedBranch) {
+        setBtnLoading(btn, true, `Memuat data cabang ${draft.cabang.toUpperCase()}...`);
         await window.POS_AUTH.onBranchSwitch(draft.cabang);
+        await ensureBranchDataLoaded(draft.cabang, target);
       }
 
       window.dispatchEvent(new CustomEvent("pos:inboxDraftReady", { detail: draft }));
 
       if (target === "KASIR_RETAIL") {
         navigateToPage("page-kasir");
-        setTimeout(() => {
-          if (window.POS_RETAIL && typeof window.POS_RETAIL.applyInboxDraft === "function") {
-            window.POS_RETAIL.applyInboxDraft(draft);
-          }
-        }, 180);
+        if (window.POS_RETAIL && typeof window.POS_RETAIL.applyInboxDraft === "function") {
+          await window.POS_RETAIL.applyInboxDraft(draft);
+        }
       } else {
         navigateToPage("page-supir");
-        setTimeout(() => {
-          if (
-            window.POS_DRIVER_CUSTOMER &&
-            typeof window.POS_DRIVER_CUSTOMER.openMulaiAntarFromInbox === "function"
-          ) {
-            window.POS_DRIVER_CUSTOMER.openMulaiAntarFromInbox(draft);
-          }
-        }, 200);
+        if (
+          window.POS_DRIVER_CUSTOMER &&
+          typeof window.POS_DRIVER_CUSTOMER.openMulaiAntarFromInbox === "function"
+        ) {
+          await window.POS_DRIVER_CUSTOMER.openMulaiAntarFromInbox(draft);
+        }
       }
 
       loadInboxQueue();
