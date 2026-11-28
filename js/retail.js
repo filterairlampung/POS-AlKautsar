@@ -36,6 +36,7 @@ window.POS_RETAIL = (function () {
     isSubmittingMutasi: false,
     mutasiBatch: [], // [{ idBarang, namaBarang, qtyPcs, infoSatuan, keterangan }]
     riwayatTab: "trx",
+    riwayatPeriod: "hari_ini", // "hari_ini" | "kemarin" | "semua"
     riwayatTrx: [],
     riwayatKas: [],
     ringkasanKolomUang: null,
@@ -75,6 +76,17 @@ window.POS_RETAIL = (function () {
     } catch (e) {
       return new Date().toISOString().slice(0, 10);
     }
+  }
+  function getYesterdayWibIso() {
+    const todayIso = getTodayWibIso();
+    const d = new Date(todayIso + "T12:00:00+07:00");
+    d.setDate(d.getDate() - 1);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(d);
   }
 
   function getNowWibTimeStr() {
@@ -280,7 +292,6 @@ window.POS_RETAIL = (function () {
       renderHargaKhusus();
     } else if (pageId === "page-arus-kas") {
       populateCoaOptions();
-      loadKolomUangArusKas();
     } else if (pageId === "page-mutasi-stok") {
       renderMutasiSelect();
       updateMutasiPreview();
@@ -1190,7 +1201,9 @@ async function loadKolomUangArusKas() {
   }
 
   function renderKolomUangArusKas(ringkasan, cabangAktif, activeRole) {
-    const container = document.getElementById("arus-kas-kolom-uang");
+    const container =
+      document.getElementById("riwayat-kolom-uang") ||
+      document.getElementById("arus-kas-kolom-uang");
     if (!container) return; // Aman sebelum HTML Mini-Patch B dipasang
 
     if (!ringkasan || !ringkasan.posisiKasToko || !ringkasan.pergerakanPeriode) {
@@ -1615,50 +1628,115 @@ async function loadKolomUangArusKas() {
     if (paneTrx) paneTrx.classList.toggle("active", state.riwayatTab === "trx");
     if (paneKas) paneKas.classList.toggle("active", state.riwayatTab === "kas");
   }
+  function isKaryawanRole() {
+    const sess = window.POS_AUTH.getSession();
+    return Boolean(sess && sess.activeRole === "Karyawan");
+  }
+
+  function applyRiwayatRoleRestrictions() {
+    const isKaryawan = isKaryawanRole();
+    const tabsWrap = document.querySelector(".riwayat-period-tabs");
+    const btnSemua = document.getElementById("riwayat-period-semua");
+    const dateWrap = document.getElementById("riwayat-date-range-wrap");
+
+    if (btnSemua) btnSemua.style.display = isKaryawan ? "none" : "";
+    if (tabsWrap) tabsWrap.classList.toggle("two-cols", isKaryawan);
+
+    if (isKaryawan) {
+      if (dateWrap) dateWrap.style.display = "none";
+      if (state.riwayatPeriod === "semua") {
+        state.riwayatPeriod = "hari_ini";
+        const today = getTodayWibIso();
+        const tglMulaiEl = document.getElementById("riwayat-tgl-mulai");
+        const tglAkhirEl = document.getElementById("riwayat-tgl-akhir");
+        if (tglMulaiEl) tglMulaiEl.value = today;
+        if (tglAkhirEl) tglAkhirEl.value = today;
+      }
+    }
+  }
+  function setRiwayatPeriod(mode) {
+    if (isKaryawanRole() && mode === "semua") {
+      mode = "hari_ini";
+    }
+    applyRiwayatRoleRestrictions();
+    state.riwayatPeriod = mode || "hari_ini";
+
+    ["hari_ini", "kemarin", "semua"].forEach((m) => {
+      const btn = document.getElementById("riwayat-period-" + m);
+      if (btn) btn.classList.toggle("active", m === state.riwayatPeriod);
+    });
+
+    const dateWrap = document.getElementById("riwayat-date-range-wrap");
+    const tglMulaiEl = document.getElementById("riwayat-tgl-mulai");
+    const tglAkhirEl = document.getElementById("riwayat-tgl-akhir");
+    const btnTutup = document.getElementById("btn-tutup-kas-riwayat");
+
+    if (state.riwayatPeriod === "hari_ini") {
+      const today = getTodayWibIso();
+      if (tglMulaiEl) tglMulaiEl.value = today;
+      if (tglAkhirEl) tglAkhirEl.value = today;
+      if (dateWrap) dateWrap.style.display = "none";
+      if (btnTutup) btnTutup.innerHTML = '<i class="fas fa-cash-register"></i> Tutup Kas Manual';
+    } else if (state.riwayatPeriod === "kemarin") {
+      const yest = getYesterdayWibIso();
+      if (tglMulaiEl) tglMulaiEl.value = yest;
+      if (tglAkhirEl) tglAkhirEl.value = yest;
+      if (dateWrap) dateWrap.style.display = "none";
+      if (btnTutup) btnTutup.innerHTML = '<i class="fas fa-cash-register"></i> Tutup Kas Kemarin';
+    } else {
+      if (tglMulaiEl) tglMulaiEl.value = "";
+      if (tglAkhirEl) tglAkhirEl.value = "";
+      if (dateWrap) dateWrap.style.display = "flex";
+      if (btnTutup) btnTutup.innerHTML = '<i class="fas fa-cash-register"></i> Tutup Kas Tgl Ini';
+    }
+
+    loadRiwayatOperasional();
+  }
 
   async function loadRiwayatOperasional() {
+    applyRiwayatRoleRestrictions();
     const noticeEl = document.getElementById("riwayat-backend-notice");
     const trxBox = document.getElementById("riwayat-trx-container");
     const kasBox = document.getElementById("riwayat-kas-container");
+    const kuBox = document.getElementById("riwayat-kolom-uang");
 
     if (!isOperationalBranch()) {
+      if (kuBox) kuBox.innerHTML = '<p class="empty-state-text">Pilih cabang Korpri atau Pringsewu untuk melihat ringkasan kas.</p>';
       if (trxBox) trxBox.innerHTML = '<p class="empty-state-text">Pilih cabang Korpri atau Pringsewu untuk melihat riwayat.</p>';
       if (kasBox) kasBox.innerHTML = '<p class="empty-state-text">Pilih cabang Korpri atau Pringsewu untuk melihat riwayat.</p>';
       return;
     }
 
     if (noticeEl) noticeEl.style.display = "none";
+    if (kuBox) kuBox.innerHTML = '<p class="empty-state-text"><i class="fas fa-spinner fa-spin"></i> Menghitung posisi kas &amp; rekap...</p>';
     if (trxBox) trxBox.innerHTML = '<p class="empty-state-text">Memuat riwayat transaksi...</p>';
     if (kasBox) kasBox.innerHTML = '<p class="empty-state-text">Memuat riwayat arus kas...</p>';
 
     const tglMulai = (document.getElementById("riwayat-tgl-mulai") || {}).value || "";
     const tglAkhir = (document.getElementById("riwayat-tgl-akhir") || {}).value || "";
+    const isAllDates = state.riwayatPeriod === "semua" && !tglMulai && !tglAkhir;
 
     const res = await window.POS_API.getRiwayatOperasional({
       tglMulai: tglMulai ? isoToDmy(tglMulai) : "",
-      tglAkhir: tglAkhir ? isoToDmy(tglAkhir) : ""
+      tglAkhir: tglAkhir ? isoToDmy(tglAkhir) : "",
+      allDates: isAllDates
     });
 
     if (!res.sukses) {
-      // Fallback graceful jika endpoint tambalan belum dipasang di Apps Script Staging
       if (res.code === "UNKNOWN_ACTION" || res.code === "MODULE_NOT_INSTALLED") {
         if (noticeEl) {
           noticeEl.innerHTML =
-            '<i class="fas fa-wrench"></i> Endpoint <code>getRiwayatOperasional</code> belum dipasang di backend Staging. Menampilkan transaksi sesi lokal (tombol Void tetap aktif terhubung ke <code>voidTransaksi</code> / <code>voidArusKas</code>).';
+            '<i class="fas fa-wrench"></i> Endpoint <code>getRiwayatOperasional</code> belum dipasang di backend.';
           noticeEl.style.display = "block";
         }
         state.riwayatTrx = state.localSessionTrx.filter((x) => x.cabang === state.cabang);
         state.riwayatKas = state.localSessionKas.filter((x) => x.cabang === state.cabang);
-        if (data.ringkasanKolomUang) {
-          state.ringkasanKolomUang = data.ringkasanKolomUang;
-          const sess = window.POS_AUTH.getSession();
-          renderKolomUangArusKas(state.ringkasanKolomUang, state.cabang, sess ? sess.activeRole : "");
-        }
         renderRiwayatTables();
         return;
       }
 
       window.POS_AUTH.showToast(res.pesan || "Gagal memuat riwayat operasional.", "error");
+      if (kuBox) kuBox.innerHTML = `<p class="empty-state-text">${escapeHtml(res.pesan || "Gagal memuat ringkasan.")}</p>`;
       if (trxBox) trxBox.innerHTML = `<p class="empty-state-text">${escapeHtml(res.pesan || "Gagal memuat data.")}</p>`;
       if (kasBox) kasBox.innerHTML = `<p class="empty-state-text">${escapeHtml(res.pesan || "Gagal memuat data.")}</p>`;
       return;
@@ -1667,7 +1745,227 @@ async function loadKolomUangArusKas() {
     const data = res.data || {};
     state.riwayatTrx = Array.isArray(data.transaksi) ? data.transaksi : [];
     state.riwayatKas = Array.isArray(data.arusKas) ? data.arusKas : [];
+
+    if (data.ringkasanKolomUang) {
+      state.ringkasanKolomUang = data.ringkasanKolomUang;
+      const sess = window.POS_AUTH.getSession();
+      renderKolomUangArusKas(state.ringkasanKolomUang, state.cabang, sess ? sess.activeRole : "");
+    }
     renderRiwayatTables();
+  }
+
+  async function tutupKasFromRiwayat() {
+    if (!ensureOperationalBranch("melakukan tutup kas")) return;
+
+    const tglMulai = (document.getElementById("riwayat-tgl-mulai") || {}).value || "";
+    const tglTargetIso = tglMulai || getTodayWibIso();
+    const tglLabel = isoToDmy(tglTargetIso);
+
+    const konfirm = window.confirm(
+      `Proses Tutup Kas Laci cabang ${state.cabang.toUpperCase()} untuk tanggal ${tglLabel}?\nSisa kas laci akan dipindahkan otomatis ke saldo hari berikutnya.`
+    );
+    if (!konfirm) return;
+
+    const btn = document.getElementById("btn-tutup-kas-riwayat");
+    const prevHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    }
+
+    const res = await window.POS_API.tutupKas(tglLabel);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = prevHtml;
+    }
+
+    if (!res.sukses) {
+      window.POS_AUTH.showToast(res.pesan || "Gagal melakukan tutup kas.", "error");
+      return;
+    }
+
+    window.POS_AUTH.showToast(res.pesan || "Tutup Kas berhasil diproses!", "success");
+    await loadRiwayatOperasional();
+  }
+
+  async function generateLaporanKasirPdf(shareToWa) {
+    if (!ensureOperationalBranch("membuat laporan kasir")) return;
+
+    const rk = state.ringkasanKolomUang;
+    if (!rk || !rk.posisiKasToko || !rk.pergerakanPeriode) {
+      window.POS_AUTH.showToast("Data ringkasan belum siap. Muat ulang halaman dulu.", "error");
+      return;
+    }
+
+    const storeCfg = getReceiptStoreConfig();
+    const periode = rk.periode || {};
+    const tglMulaiStr = periode.tglMulai || isoToDmy(getTodayWibIso());
+    const tglAkhirStr = periode.tglAkhir || tglMulaiStr;
+    const tglLabel = tglMulaiStr === tglAkhirStr ? tglMulaiStr : `${tglMulaiStr} s/d ${tglAkhirStr}`;
+    const fileDateSlug = String(tglMulaiStr).replace(/\//g, "-").replace(/[^0-9A-Za-z_-]/g, "");
+    const fileName = `Laporan_Kasir_${state.cabang.toUpperCase()}_${fileDateSlug || "Rekap"}.pdf`;
+
+    const gerak = rk.pergerakanPeriode;
+    const posisi = rk.posisiKasToko;
+    const bunda = gerak.uangKeBunda || {};
+    const totalPemasukan = (Number(gerak.penjualanTotal) || 0) + (Number(gerak.pemasukanLain) || 0);
+    const totalPengeluaran = Number(gerak.pengeluaranTotal) || 0;
+    const totalKeBunda = Number(bunda.totalKeBunda) || 0;
+    const sisaLaci = Number(posisi.sisaKasLaci) || 0;
+
+    // Susun teks ringkasan WhatsApp
+    const waLines = [
+      `*LAPORAN KASIR HARIAN — ${storeCfg.namaToko}*`,
+      `Cabang: ${state.cabang.toUpperCase()}`,
+      `Tanggal: ${tglLabel}`,
+      ``,
+      `• Total Pemasukan: ${formatRupiah(totalPemasukan)}`,
+      `  (Tunai: ${formatRupiah(gerak.penjualanTunai)} | Non-Tunai: ${formatRupiah(gerak.penjualanNonTunai)})`,
+      `• Pengeluaran Toko: ${formatRupiah(totalPengeluaran)}`,
+      `• Uang ke Bunda: ${formatRupiah(totalKeBunda)}`,
+      `  (Setoran: ${formatRupiah(bunda.setoranToko)} | TF Langsung: ${formatRupiah(bunda.transferLangsungPelanggan)})`,
+      `• *Sisa Uang Laci: ${formatRupiah(sisaLaci)}*`
+    ];
+    if (posisi.saldoRekeningToko !== null && posisi.saldoRekeningToko !== undefined && !(state.cabang === "pringsewu" && Number(posisi.saldoRekeningToko) === 0)) {
+      waLines.push(`• Saldo Rekening Toko: ${formatRupiah(posisi.saldoRekeningToko)}`);
+    }
+    const waText = waLines.join("\n");
+
+    // Cek ketersediaan jsPDF
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      if (shareToWa) {
+        window.open("https://wa.me/?text=" + encodeURIComponent(waText), "_blank");
+        window.POS_AUTH.showToast("Library PDF belum termuat, membuka rekap teks di WhatsApp.", "info");
+      } else {
+        window.POS_AUTH.showToast("Library PDF belum termuat. Cek koneksi internet lalu refresh.", "error");
+      }
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+    // Header Laporan (Gaya Laporan_Kasir v2.0)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text(String(storeCfg.namaToko || "AL-KAUTSAR FILTER AIR").toUpperCase(), 14, 15);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Laporan Kasir Harian | Cabang: ${state.cabang.toUpperCase()} | Tanggal: ${tglLabel}`, 14, 21);
+
+    // 4 Kartu KPI Warna di Atas PDF
+    const cards = [
+      { title: "TOTAL PEMASUKAN", val: formatRupiah(totalPemasukan), bg: [16, 185, 129] },
+      { title: "PENGELUARAN", val: formatRupiah(totalPengeluaran), bg: [239, 68, 68] },
+      { title: "UANG KE BUNDA", val: formatRupiah(totalKeBunda), bg: [245, 158, 11] },
+      { title: "SISA UANG LACI", val: formatRupiah(sisaLaci), bg: [14, 165, 233] }
+    ];
+    const startX = 14;
+    const cardW = 43.5;
+    const gap = 3;
+    cards.forEach((c, idx) => {
+      const x = startX + idx * (cardW + gap);
+      doc.setFillColor(c.bg[0], c.bg[1], c.bg[2]);
+      doc.roundedRect(x, 26, cardW, 17, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.text(c.title, x + 3, 32);
+      doc.setFontSize(10.5);
+      doc.text(c.val, x + 3, 39.5);
+    });
+
+    // Gabungkan Baris Arus Kas Manual (non-penjualan kasir) + Baris Penjualan
+    const tableRows = [];
+    const activeKas = state.riwayatKas.filter((k) => !isRowVoided(k));
+    activeKas.forEach((k) => {
+      // Hindari duplikasi baris penjualan kasir yang sudah tampil di tabel transaksi
+      if (String(k.kodeCoa || "").toUpperCase() === "401-PENJUALAN" && String(k.refId || "").startsWith("TRX")) {
+        return;
+      }
+      const isMasuk = String(k.kategori || "").toLowerCase() === "pemasukan" || String(k.kategori || "").toLowerCase() === "saldo awal";
+      const nom = k.nominal !== undefined ? k.nominal : isMasuk ? k.kasMasuk : k.kasKeluar;
+      tableRows.push([
+        k.tanggal || "-",
+        k.idKas || "-",
+        `Arus Kas (${k.kategori || "-"})`,
+        "-",
+        `${k.jenis || ""} - ${k.keterangan || ""}`.trim(),
+        formatRupiah(nom),
+        k.akunKas || "Kas Laci"
+      ]);
+    });
+
+    const activeTrx = state.riwayatTrx.filter((t) => !isRowVoided(t));
+    activeTrx.forEach((t) => {
+      const itemLines =
+        Array.isArray(t.items) && t.items.length > 0
+          ? t.items.map((it) => `• ${it.nama} (${it.qty} x ${formatRupiah(it.harga)})`).join("\n")
+          : "-";
+      tableRows.push([
+        `${t.tanggal || "-"}\n${t.waktu || ""}`.trim(),
+        t.idTrx || "-",
+        "Penjualan",
+        itemLines,
+        `Pelanggan: ${t.pelanggan || "Umum"}\n(${t.metode || "Tunai"} - ${t.akunKas || "-"})`,
+        formatRupiah(t.totalBelanja),
+        t.status || "Lunas"
+      ]);
+    });
+
+    if (typeof doc.autoTable === "function") {
+      doc.autoTable({
+        startY: 47,
+        head: [["Tgl/Waktu", "ID", "Jenis", "Nama Barang", "Keterangan", "Nominal", "Status"]],
+        body: tableRows.length > 0 ? tableRows : [["-", "-", "Belum ada data pada periode ini", "-", "-", "Rp 0", "-"]],
+        styles: { fontSize: 8, cellPadding: 2.2, valign: "top", textColor: [30, 41, 59] },
+        headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: "bold" },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 27 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 43 },
+          4: { cellWidth: 34 },
+          5: { cellWidth: 20, halign: "right", fontStyle: "bold" },
+          6: { cellWidth: 16 }
+        },
+        margin: { left: 14, right: 14 }
+      });
+    }
+
+    if (!shareToWa) {
+      doc.save(fileName);
+      window.POS_AUTH.showToast(`PDF ${fileName} berhasil diunduh.`, "success");
+      return;
+    }
+
+    // Mode Lapor Bos: Share PDF langsung ke WhatsApp di HP (Android/iOS), fallback download + wa.me di Desktop
+    try {
+      const pdfBlob = doc.output("blob");
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Laporan Kasir ${tglLabel}`,
+          text: waText
+        });
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // User batal share
+    }
+
+    // Fallback Desktop / Browser yang tidak mendukung Web Share File
+    doc.save(fileName);
+    window.open("https://wa.me/?text=" + encodeURIComponent(waText), "_blank");
+    window.POS_AUTH.showToast(
+      `PDF ${fileName} otomatis diunduh — silakan lampirkan ke chat WhatsApp yang baru terbuka.`,
+      "success"
+    );
   }
 
   function isRowVoided(row) {
@@ -2071,6 +2369,9 @@ async function loadKolomUangArusKas() {
     openVoidModal,
     closeVoidModal,
     confirmVoid,
+    setRiwayatPeriod,
+    tutupKasFromRiwayat,
+    generateLaporanKasirPdf,
 
     // Pengaturan Struk
     submitPengaturanStruk

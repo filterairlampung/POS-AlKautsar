@@ -4602,3 +4602,94 @@ td {
     min-width: 0;
   }
 }
+/* === RIWAYAT TRANSAKSI GAYA v2.0 + LAPOR BOS === */
+.riwayat-period-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.riwayat-period-tabs.two-cols {
+  grid-template-columns: repeat(2, 1fr);
+}
+.riwayat-period-btn {
+  padding: 12px 10px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.riwayat-period-btn.active {
+  color: var(--primary-color, #005A9C);
+  border-bottom-color: var(--primary-color, #005A9C);
+  background: #f8fafc;
+}
+
+.riwayat-toolbar-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.riwayat-date-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.riwayat-date-wrap input[type="date"] {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.riwayat-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.riwayat-search-input {
+  flex: 1 1 240px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.riwayat-action-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.btn-lapor-bos,
+.btn-tutup-kas-inline,
+.btn-cetak-pdf-inline {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-lapor-bos { background: #16a34a; }
+.btn-lapor-bos:hover { background: #15803d; }
+.btn-tutup-kas-inline { background: #475569; }
+.btn-tutup-kas-inline:hover { background: #334155; }
+.btn-cetak-pdf-inline { background: #dc2626; }
+.btn-cetak-pdf-inline:hover { background: #b91c1c; }

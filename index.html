@@ -403,77 +403,6 @@
           <!-- PAGE 4: ARUS KAS & TUTUP KAS LACI                            -->
           <!-- ============================================================ -->
           <section id="page-arus-kas" class="page-section">
-            <!-- PANEL KOLOM UANG ARUS KAS (MINI-PATCH PRA-CUTOVER) -->
-            <div class="ku-panel-wrapper">
-              <div class="ku-filter-bar">
-                <div class="ku-filter-title">
-                  <i class="fas fa-coins"></i>
-                  <span>Filter Pergerakan Periode</span>
-                </div>
-                <div class="ku-filter-controls">
-                  <input type="date" id="arus-kas-tgl-mulai" title="Tanggal mulai" onchange="POS_RETAIL.loadKolomUangArusKas()">
-                  <span class="ku-date-sep">s/d</span>
-                  <input type="date" id="arus-kas-tgl-akhir" title="Tanggal akhir" onchange="POS_RETAIL.loadKolomUangArusKas()">
-                  <button type="button" class="btn-aksi btn-filter-reload" onclick="POS_RETAIL.loadKolomUangArusKas()">
-                    <i class="fas fa-rotate"></i> Muat
-                  </button>
-                </div>
-              </div>
-
-              <!-- Kontainer ini dirender dinamis oleh POS_RETAIL.renderKolomUangArusKas() -->
-              <div id="arus-kas-kolom-uang" class="ku-container">
-                <!-- Baris 1: Posisi Uang di Tangan Toko (Akumulasi) -->
-                <div class="ku-group">
-                  <div class="ku-group-header">
-                    <h4><i class="fas fa-vault"></i> Posisi Kas Toko (Saldo Berjalan)</h4>
-                  </div>
-                  <div class="ku-grid ku-grid-posisi">
-                    <div id="ku-card-kas-laci" class="ku-card ku-card-laci">
-                      <div class="ku-card-label"><i class="fas fa-cash-register"></i> Sisa Uang Kas (Laci)</div>
-                      <div class="ku-card-value">Rp 0</div>
-                      <div class="ku-card-sub">Uang tunai tanggung jawab toko saat ini</div>
-                    </div>
-                    <div id="ku-card-rek-toko" class="ku-card ku-card-bank">
-                      <div class="ku-card-label"><i class="fas fa-building-columns"></i> Saldo Rekening Toko</div>
-                      <div class="ku-card-value">Rp 0</div>
-                      <div class="ku-card-sub">Saldo berjalan (akumulasi buku)</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Baris 2: Pergerakan Periode Terpilih (Default Hari Ini) -->
-                <div class="ku-group">
-                  <div class="ku-group-header">
-                    <h4><i class="fas fa-chart-line"></i> Pergerakan Periode (Hari Ini)</h4>
-                  </div>
-                  <div class="ku-grid ku-grid-periode">
-                    <div class="ku-card ku-card-in">
-                      <div class="ku-card-label">Penjualan</div>
-                      <div class="ku-card-value">Rp 0</div>
-                      <div class="ku-card-sub">Tunai: Rp 0 &bull; Transfer/QRIS: Rp 0</div>
-                    </div>
-                    <div class="ku-card ku-card-other">
-                      <div class="ku-card-label">Pemasukan Lain</div>
-                      <div class="ku-card-value">Rp 0</div>
-                      <div class="ku-card-sub">Pelunasan Piutang &amp; Pemasukan Lain</div>
-                    </div>
-                    <div class="ku-card ku-card-out">
-                      <div class="ku-card-label">Pengeluaran</div>
-                      <div class="ku-card-value">Rp 0</div>
-                      <div class="ku-card-sub">Stok, Proyek, Operasional &amp; Gaji</div>
-                    </div>
-                    <div class="ku-card ku-card-bunda">
-                      <div class="ku-card-label">Uang ke Bunda</div>
-                      <div class="ku-card-value">Rp 0</div>
-                      <div class="ku-card-sub">Setoran: Rp 0 &bull; TF Langsung: Rp 0</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Baris 3: Strip Opsional Mutasi Antar Cabang (Default Tersembunyi) -->
-                <div id="ku-strip-mutasi" class="ku-mutasi-strip ku-hidden"></div>
-              </div>
-            </div>
             <div class="two-col-grid">
               <!-- Form Catat Arus Kas -->
               <div class="form-card">
@@ -665,11 +594,63 @@
           </section>
 
           <!-- ============================================================ -->
-          <!-- PAGE 6: RIWAYAT TRANSAKSI & ARUS KAS (+ SOFT-DELETE VOID)    -->
+          <!-- PAGE 6: RIWAYAT TRANSAKSI, KOLOM UANG & LAPOR BOS (v2.0+v3)  -->
           <!-- ============================================================ -->
           <section id="page-riwayat" class="page-section">
             <div id="riwayat-backend-notice" class="info-banner-yellow" style="display: none;"></div>
 
+            <!-- Tab Cepat Periode (Gaya v2.0: Hari Ini | Kemarin | Semua) -->
+            <div class="riwayat-period-tabs">
+              <button type="button" id="riwayat-period-hari_ini" class="riwayat-period-btn active" onclick="POS_RETAIL.setRiwayatPeriod('hari_ini')">
+                Hari Ini
+              </button>
+              <button type="button" id="riwayat-period-kemarin" class="riwayat-period-btn" onclick="POS_RETAIL.setRiwayatPeriod('kemarin')">
+                Kemarin
+              </button>
+              <button type="button" id="riwayat-period-semua" class="riwayat-period-btn" onclick="POS_RETAIL.setRiwayatPeriod('semua')">
+                Semua
+              </button>
+            </div>
+
+            <!-- Panel Kolom Uang (Dipindah dari Arus Kas ke Riwayat Transaksi) -->
+            <div id="riwayat-kolom-uang" class="ku-container" style="margin-bottom: 14px;">
+              <p class="empty-state-text">Memuat ringkasan kas harian...</p>
+            </div>
+
+            <!-- Baris Pencarian, Filter Tanggal & Aksi Cepat (Lapor Bos + Tutup Kas + PDF) -->
+            <div class="riwayat-toolbar-box">
+              <div id="riwayat-date-range-wrap" class="riwayat-date-wrap" style="display: none;">
+                <input type="date" id="riwayat-tgl-mulai" title="Tanggal mulai">
+                <span class="ku-date-sep">s/d</span>
+                <input type="date" id="riwayat-tgl-akhir" title="Tanggal akhir">
+                <button type="button" class="btn-aksi btn-filter-reload" onclick="POS_RETAIL.loadRiwayatOperasional()">
+                  <i class="fas fa-magnifying-glass"></i> Terapkan
+                </button>
+              </div>
+
+              <div class="riwayat-action-row">
+                <input
+                  type="search"
+                  id="riwayat-search"
+                  class="riwayat-search-input"
+                  placeholder="Cari ID, pelanggan, barang, atau keterangan..."
+                  oninput="POS_RETAIL.renderRiwayatTables()"
+                >
+                <div class="riwayat-action-btns">
+                  <button type="button" id="btn-lapor-bos" class="btn-lapor-bos" onclick="POS_RETAIL.generateLaporanKasirPdf(true)">
+                    <i class="fab fa-whatsapp"></i> Lapor Bos
+                  </button>
+                  <button type="button" id="btn-tutup-kas-riwayat" class="btn-tutup-kas-inline" onclick="POS_RETAIL.tutupKasFromRiwayat()">
+                    <i class="fas fa-cash-register"></i> Tutup Kas
+                  </button>
+                  <button type="button" id="btn-cetak-pdf-riwayat" class="btn-cetak-pdf-inline" onclick="POS_RETAIL.generateLaporanKasirPdf(false)">
+                    <i class="fas fa-file-pdf"></i> Cetak PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-Tab Data: Riwayat Transaksi & Riwayat Arus Kas -->
             <div class="tabs-container">
               <div id="tab-btn-trx" class="tab-btn active" onclick="POS_RETAIL.switchRiwayatTab('trx')">
                 <i class="fas fa-receipt"></i> Riwayat Transaksi
@@ -677,20 +658,6 @@
               <div id="tab-btn-kas" class="tab-btn" onclick="POS_RETAIL.switchRiwayatTab('kas')">
                 <i class="fas fa-money-bill-transfer"></i> Riwayat Arus Kas
               </div>
-            </div>
-
-            <div class="filter-bar filter-bar-box">
-              <input type="date" id="riwayat-tgl-mulai" title="Tanggal mulai">
-              <input type="date" id="riwayat-tgl-akhir" title="Tanggal akhir">
-              <input
-                type="search"
-                id="riwayat-search"
-                placeholder="Cari ID, pelanggan, atau keterangan..."
-                oninput="POS_RETAIL.renderRiwayatTables()"
-              >
-              <button type="button" class="btn-aksi btn-filter-reload" onclick="POS_RETAIL.loadRiwayatOperasional()">
-                <i class="fas fa-magnifying-glass"></i> Muat
-              </button>
             </div>
 
             <div id="tab-riwayat-trx" class="tab-content active">
@@ -2357,6 +2324,9 @@
 
   <!-- Library html2canvas untuk Render Struk PNG 384px di iOS -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <!-- Library jsPDF + AutoTable untuk PDF Laporan Kasir Harian (Lapor Bos) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js" defer></script>
 
   <!-- Modul JavaScript POS v3.0 (Urutan Wajib Dipertahankan) -->
   <script src="./js/config.js"></script>
