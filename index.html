@@ -403,6 +403,77 @@
           <!-- PAGE 4: ARUS KAS & TUTUP KAS LACI                            -->
           <!-- ============================================================ -->
           <section id="page-arus-kas" class="page-section">
+            <!-- PANEL KOLOM UANG ARUS KAS (MINI-PATCH PRA-CUTOVER) -->
+            <div class="ku-panel-wrapper">
+              <div class="ku-filter-bar">
+                <div class="ku-filter-title">
+                  <i class="fas fa-coins"></i>
+                  <span>Filter Pergerakan Periode</span>
+                </div>
+                <div class="ku-filter-controls">
+                  <input type="date" id="arus-kas-tgl-mulai" title="Tanggal mulai" onchange="POS_RETAIL.loadKolomUangArusKas()">
+                  <span class="ku-date-sep">s/d</span>
+                  <input type="date" id="arus-kas-tgl-akhir" title="Tanggal akhir" onchange="POS_RETAIL.loadKolomUangArusKas()">
+                  <button type="button" class="btn-aksi btn-filter-reload" onclick="POS_RETAIL.loadKolomUangArusKas()">
+                    <i class="fas fa-rotate"></i> Muat
+                  </button>
+                </div>
+              </div>
+
+              <!-- Kontainer ini dirender dinamis oleh POS_RETAIL.renderKolomUangArusKas() -->
+              <div id="arus-kas-kolom-uang" class="ku-container">
+                <!-- Baris 1: Posisi Uang di Tangan Toko (Akumulasi) -->
+                <div class="ku-group">
+                  <div class="ku-group-header">
+                    <h4><i class="fas fa-vault"></i> Posisi Kas Toko (Saldo Berjalan)</h4>
+                  </div>
+                  <div class="ku-grid ku-grid-posisi">
+                    <div id="ku-card-kas-laci" class="ku-card ku-card-laci">
+                      <div class="ku-card-label"><i class="fas fa-cash-register"></i> Sisa Uang Kas (Laci)</div>
+                      <div class="ku-card-value">Rp 0</div>
+                      <div class="ku-card-sub">Uang tunai tanggung jawab toko saat ini</div>
+                    </div>
+                    <div id="ku-card-rek-toko" class="ku-card ku-card-bank">
+                      <div class="ku-card-label"><i class="fas fa-building-columns"></i> Saldo Rekening Toko</div>
+                      <div class="ku-card-value">Rp 0</div>
+                      <div class="ku-card-sub">Saldo berjalan (akumulasi buku)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Baris 2: Pergerakan Periode Terpilih (Default Hari Ini) -->
+                <div class="ku-group">
+                  <div class="ku-group-header">
+                    <h4><i class="fas fa-chart-line"></i> Pergerakan Periode (Hari Ini)</h4>
+                  </div>
+                  <div class="ku-grid ku-grid-periode">
+                    <div class="ku-card ku-card-in">
+                      <div class="ku-card-label">Penjualan</div>
+                      <div class="ku-card-value">Rp 0</div>
+                      <div class="ku-card-sub">Tunai: Rp 0 &bull; Transfer/QRIS: Rp 0</div>
+                    </div>
+                    <div class="ku-card ku-card-other">
+                      <div class="ku-card-label">Pemasukan Lain</div>
+                      <div class="ku-card-value">Rp 0</div>
+                      <div class="ku-card-sub">Pelunasan Piutang &amp; Pemasukan Lain</div>
+                    </div>
+                    <div class="ku-card ku-card-out">
+                      <div class="ku-card-label">Pengeluaran</div>
+                      <div class="ku-card-value">Rp 0</div>
+                      <div class="ku-card-sub">Stok, Proyek, Operasional &amp; Gaji</div>
+                    </div>
+                    <div class="ku-card ku-card-bunda">
+                      <div class="ku-card-label">Uang ke Bunda</div>
+                      <div class="ku-card-value">Rp 0</div>
+                      <div class="ku-card-sub">Setoran: Rp 0 &bull; TF Langsung: Rp 0</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Baris 3: Strip Opsional Mutasi Antar Cabang (Default Tersembunyi) -->
+                <div id="ku-strip-mutasi" class="ku-mutasi-strip ku-hidden"></div>
+              </div>
+            </div>
             <div class="two-col-grid">
               <!-- Form Catat Arus Kas -->
               <div class="form-card">

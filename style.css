@@ -4330,3 +4330,275 @@ td {
     flex: 1 1 auto;
   }
 }
+/* ========================================================================== */
+/* MINI-PATCH PRA-CUTOVER: PANEL KOLOM UANG ARUS KAS                          */
+/* ========================================================================== */
+
+.ku-panel-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.ku-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.ku-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ku-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ku-filter-controls input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.ku-date-sep {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.ku-group + .ku-group {
+  margin-top: 16px;
+}
+
+.ku-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ku-group-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ku-badge-role {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Grid Responsif */
+.ku-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.ku-grid-posisi {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.ku-grid-periode {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Kartu Dasar */
+.ku-card {
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ku-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ku-card-value {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.ku-card-sub {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* Highlight Baris 1: Saldo Aktif Toko */
+.ku-card-laci {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: #6ee7b7;
+  border-left: 4px solid #059669;
+}
+
+.ku-card-laci .ku-card-label {
+  color: #065f46;
+}
+
+.ku-card-laci .ku-card-value {
+  font-size: 22px;
+  color: #064e3b;
+}
+
+.ku-card-bank {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+  border-left: 4px solid #2563eb;
+}
+
+.ku-card-bank .ku-card-label {
+  color: #1e40af;
+}
+
+.ku-card-bank .ku-card-value {
+  font-size: 22px;
+  color: #1e3a8a;
+}
+
+/* Kontras Warna Baris 2: Pergerakan Periode */
+.ku-card-in {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  border-top: 3px solid #16a34a;
+}
+.ku-card-in .ku-card-value {
+  color: #15803d;
+}
+
+.ku-card-other {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  border-top: 3px solid #0284c7;
+}
+.ku-card-other .ku-card-value {
+  color: #0369a1;
+}
+
+.ku-card-out {
+  background: #fef2f2;
+  border-color: #fecaca;
+  border-top: 3px solid #dc2626;
+}
+.ku-card-out .ku-card-value {
+  color: #b91c1c;
+}
+
+.ku-card-bunda {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-top: 3px solid #d97706;
+}
+.ku-card-bunda .ku-card-value {
+  color: #b45309;
+}
+
+/* Baris 3: Strip Mutasi Antar Cabang */
+.ku-mutasi-strip {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  color: #4c1d95;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ku-mutasi-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ku-mutasi-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ku-hidden {
+  display: none !important;
+}
+
+/* Responsif Mobile (Android & iOS): 2 Kolom Rapi untuk Baris 2 */
+@media (max-width: 768px) {
+  .ku-panel-wrapper {
+    padding: 12px;
+  }
+
+  .ku-grid-posisi {
+    grid-template-columns: 1fr;
+  }
+
+  .ku-grid-periode {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ku-card {
+    padding: 10px 11px;
+  }
+
+  .ku-card-value {
+    font-size: 15px;
+  }
+
+  .ku-card-laci .ku-card-value,
+  .ku-card-bank .ku-card-value {
+    font-size: 20px;
+  }
+
+  .ku-filter-controls {
+    width: 100%;
+  }
+
+  .ku-filter-controls input[type="date"] {
+    flex: 1 1 115px;
+    min-width: 0;
+  }
+}
