@@ -379,6 +379,70 @@ window.POS_API = (function () {
   function kelolaAksesNotifAdmin(payload = {}) {
     return request("kelolaAksesNotifAdmin", payload);
   }
+  // ==========================================================================
+  // WRAPPER TAMBAHAN FASE 6 (GEMINI AI ADMIN & INBOX SMART PASTE WA)
+  // ==========================================================================
+
+  function listAppConfigAdmin(payload = {}) {
+    return request("listAppConfigAdmin", payload);
+  }
+
+  function updateAppConfigAdmin(payload = {}, clientRequestId) {
+    return request("updateAppConfigAdmin", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("CFG")
+    });
+  }
+
+  function rollbackAppConfigAdmin(payload = {}, clientRequestId) {
+    return request("rollbackAppConfigAdmin", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("RBK")
+    });
+  }
+
+  function previewEditMasterBarangAI(payload = {}) {
+    return request("previewEditMasterBarangAI", payload, {
+      cabang: payload.cabang || undefined,
+      timeoutMs: 45000
+    });
+  }
+
+  function executeEditMasterBarangAI(payload = {}, clientRequestId) {
+    return request("executeEditMasterBarangAI", payload, {
+      cabang: payload.cabang || undefined,
+      clientRequestId: clientRequestId || generateClientRequestId("AIBRG")
+    });
+  }
+
+  function cariTransaksiHistorisAI(payload = {}) {
+    return request("cariTransaksiHistorisAI", payload, {
+      cabang: payload.cabang || undefined,
+      timeoutMs: 45000
+    });
+  }
+
+  function parseSmartPasteWA(payload = {}, clientRequestId) {
+    return request("parseSmartPasteWA", payload, {
+      cabang: payload.cabang || undefined,
+      clientRequestId: clientRequestId || generateClientRequestId("WA"),
+      timeoutMs: 45000
+    });
+  }
+
+  function getInboxPesanan(payload = {}) {
+    return request("getInboxPesanan", payload, {
+      cabang: payload.cabang || undefined
+    });
+  }
+
+  function updateInboxPesanan(payload = {}, clientRequestId) {
+    return request("updateInboxPesanan", payload, {
+      clientRequestId: clientRequestId || generateClientRequestId("INB")
+    });
+  }
+
+  function konversiInboxKeDraft(payload = {}) {
+    return request("konversiInboxKeDraft", payload);
+  }
 
   return {
     generateClientRequestId,
@@ -422,6 +486,16 @@ window.POS_API = (function () {
     cariRekapBos,
     getNotifInApp,
     testNotifTelegram,
-    kelolaAksesNotifAdmin
+    kelolaAksesNotifAdmin,
+    listAppConfigAdmin,
+    updateAppConfigAdmin,
+    rollbackAppConfigAdmin,
+    previewEditMasterBarangAI,
+    executeEditMasterBarangAI,
+    cariTransaksiHistorisAI,
+    parseSmartPasteWA,
+    getInboxPesanan,
+    updateInboxPesanan,
+    konversiInboxKeDraft
   };
 })();

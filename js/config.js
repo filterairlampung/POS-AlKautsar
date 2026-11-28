@@ -14,7 +14,7 @@ window.POS_CONFIG = (function () {
   const GAS_WEB_APP_URL =
     "https://script.google.com/macros/s/AKfycbznGxMHlmgwmbo_-X1aiL79ILHtktME6q4NXgFfvfdzYterPTc7oktPKgpA1t6XmZtP1w/exec";
 
-  const APP_VERSION = "3.3.0-staging";
+  const APP_VERSION = "3.4.0-staging";
   const SESSION_STORAGE_KEY = "pos_alkautsar_v3_session";
   const IOS_BANNER_DISMISS_KEY = "pos_alkautsar_v3_ios_banner_dismissed";
   const OFFLINE_QUEUE_STORAGE_KEY = "pos_alkautsar_v3_offline_queue";
@@ -216,17 +216,15 @@ window.POS_CONFIG = (function () {
       implemented: true
     },
 
-    // --- FASE 6: INTEGRASI GEMINI AI (SMART PASTE & ASISTEN AI) ---
+    // --- FASE 6: INTEGRASI GEMINI AI (SMART PASTE & ASISTEN AI) (AKTIF) ---
     {
       id: "page-inbox-paste",
       label: "Inbox Smart Paste",
       icon: "fa-paste",
       group: "Analitik & Sistem",
-      roles: ["Manajer", "Bos", "Admin"],
+      roles: ["Karyawan", "Manajer", "Bos", "Admin"],
       phase: 6,
-      implemented: false,
-      placeholderDesc:
-        "Konversi cepat teks pesanan dari grup WhatsApp menjadi draft transaksi, tugas supir, dan jadwal Google Calendar menggunakan Gemini AI."
+      implemented: true
     },
     {
       id: "page-asisten-ai",
@@ -235,9 +233,7 @@ window.POS_CONFIG = (function () {
       group: "Analitik & Sistem",
       roles: ["Admin"],
       phase: 6,
-      implemented: false,
-      placeholderDesc:
-        "Asisten AI internal khusus Admin untuk analisis lintas cabang, penelusuran arsip transaksi, pembaruan master barang, dan kontrol konfigurasi sistem."
+      implemented: true
     }
   ];
 

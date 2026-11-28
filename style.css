@@ -3779,3 +3779,554 @@ td {
     right: -4px;
   }
 }
+/* ============================================================================
+   FASE 6: ASISTEN AI ADMIN & INBOX SMART PASTE WA
+   ============================================================================ */
+
+/* Anti-bug router section (pelajaran Fase 3–5) */
+#page-inbox-paste.active,
+#page-asisten-ai.active {
+  display: block !important;
+}
+
+.ai-page-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 8px 4px 48px;
+}
+
+.ai-hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.ai-main-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-sub-meta {
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 2px 0 0;
+}
+
+.ai-panel-card,
+.ai-result-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.ai-confirm-2step-card {
+  border: 2px solid #f59e0b;
+  background: #fffdf7;
+}
+
+.ai-panel-head {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ai-panel-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-blue, #005A9C);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-panel-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ai-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.ai-subform-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+/* --- Form Grid & Input Scoped Fase 6 --- */
+.ai-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ai-col-span-2 {
+  grid-column: span 2;
+}
+
+.ai-form-grid label,
+.ai-modal-reason label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 5px;
+}
+
+#page-inbox-paste .ai-input,
+#page-asisten-ai .ai-input,
+#ai-confirm-modal .ai-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#page-inbox-paste .ai-input:focus,
+#page-asisten-ai .ai-input:focus,
+#ai-confirm-modal .ai-input:focus {
+  border-color: var(--primary-blue, #005A9C);
+  box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.14);
+}
+
+#page-inbox-paste .ai-textarea,
+#page-asisten-ai .ai-textarea {
+  resize: vertical;
+  min-height: 92px;
+  line-height: 1.5;
+}
+
+/* --- Tombol Scoped Fase 6 (Anti Tombol Polos Browser) --- */
+#page-inbox-paste button,
+#page-asisten-ai button,
+#ai-confirm-modal button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ai-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ai-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ai-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ai-btn-sm {
+  min-height: 34px;
+  padding: 6px 11px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
+.ai-btn-primary {
+  background: var(--primary-blue, #005A9C);
+  color: #ffffff;
+  border-color: var(--primary-blue, #005A9C);
+}
+
+.ai-btn-primary:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.ai-btn-secondary {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.ai-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.ai-btn-teal {
+  background: #0f766e;
+  color: #ffffff;
+  border-color: #0f766e;
+}
+
+.ai-btn-success {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.ai-btn-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #f59e0b;
+}
+
+.ai-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.ai-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* --- Mode Pemilih Cepat & Filter Status Inbox --- */
+.ai-mode-group,
+.inbox-status-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.ai-mode-btn,
+.inbox-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ai-mode-btn.active,
+.inbox-status-btn.active {
+  background: var(--primary-blue, #005A9C);
+  border-color: var(--primary-blue, #005A9C);
+  color: #ffffff;
+}
+
+/* --- Badge & Alert --- */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ai-badge-blue { background: #dbeafe; color: #1d4ed8; }
+.ai-badge-green { background: #dcfce7; color: #15803d; }
+.ai-badge-amber { background: #fef3c7; color: #b45309; }
+.ai-badge-red { background: #fee2e2; color: #b91c1c; }
+.ai-badge-slate { background: #e2e8f0; color: #334155; }
+
+.ai-alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.ai-alert-danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.ai-alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.ai-alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.ai-alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+.ai-loading-box,
+.ai-empty-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #475569;
+  font-size: 13.5px;
+  text-align: center;
+}
+
+/* --- Ringkasan & Tabel Hasil AI / Diff Master Barang --- */
+.ai-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ai-filter-chips span {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.ai-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ai-sum-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.ai-sum-box span {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+  margin-bottom: 3px;
+}
+
+.ai-sum-box strong {
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.ai-sum-in strong { color: #059669; }
+.ai-sum-out strong { color: #dc2626; }
+
+.ai-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.ai-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ai-table th {
+  background: #1e293b;
+  color: #ffffff;
+  padding: 9px 10px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ai-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.ai-diff-old {
+  color: #b91c1c;
+  text-decoration: line-through;
+  background: #fef2f2;
+  font-weight: 600;
+}
+
+.ai-diff-new {
+  color: #047857;
+  background: #ecfdf5;
+  font-weight: 700;
+}
+
+.ai-row-void {
+  opacity: 0.65;
+  background: #fef2f2;
+}
+
+/* --- Kartu Antrean Inbox WA --- */
+.inbox-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inbox-queue-card {
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--primary-blue, #005A9C);
+  border-radius: 12px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.inbox-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.inbox-card-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.inbox-card-items {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #1e293b;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.inbox-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.inbox-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* --- Modal Konfirmasi Fase 6 --- */
+.ai-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 99990;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ai-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 460px;
+  width: 100%;
+  padding: 20px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.3);
+}
+
+.ai-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ai-modal-header h3 {
+  margin: 0;
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.ai-modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ai-modal-body {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+.ai-modal-reason {
+  margin-bottom: 14px;
+}
+
+.ai-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* --- Responsif Mobile Android & iOS --- */
+@media (max-width: 768px) {
+  .ai-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-col-span-2 {
+    grid-column: span 1;
+  }
+  #page-inbox-paste .ai-input,
+  #page-asisten-ai .ai-input,
+  #ai-confirm-modal .ai-input {
+    font-size: 16px; /* Cegah auto-zoom Safari iOS */
+  }
+  .ai-action-bar .ai-btn,
+  .inbox-card-actions .ai-btn {
+    flex: 1 1 auto;
+  }
+}

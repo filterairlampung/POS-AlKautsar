@@ -1,11 +1,11 @@
 /**
  * ============================================================================
- * POS AL-KAUTSAR BUMINDO v3.1.2 — SERVICE WORKER (PWA)
+ * POS AL-KAUTSAR BUMINDO v3.4.0 — SERVICE WORKER (PWA)
  * File: sw.js
  * ============================================================================
  */
 
-const CACHE_NAME = "pos-alkautsar-v3.3.1";
+const CACHE_NAME = "pos-alkautsar-v3.4.0";
 
 const STATIC_ASSETS = [
   "./",
@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
   "./js/driver_customer.js",
   "./js/damiu_mutasi.js",
   "./js/report_notif.js",
+  "./js/ai_inbox.js",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
