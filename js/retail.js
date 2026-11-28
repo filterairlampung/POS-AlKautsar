@@ -41,7 +41,8 @@ window.POS_RETAIL = (function () {
     // Cache lokal sesi untuk fallback pratinjau jika handler baca riwayat belum dipasang
     localSessionTrx: [],
     localSessionKas: [],
-    voidTarget: null // { type: 'trx' | 'kas', id, label, nominal, tanggal }
+    voidTarget: null, // { type: 'trx' | 'kas', id, label, nominal, tanggal }
+    pendingInboxDraft: null // Draft aktif dari Inbox Smart Paste WA
   };
 
   // ==========================================================================
@@ -535,6 +536,72 @@ window.POS_RETAIL = (function () {
     if (hargaEl) hargaEl.textContent = formatRupiah(totalRp);
   }
 
+  function applyInboxDraft(draft) {
+    if (!draft || typeof draft !== "object") return false;
+    if (!ensureOperationalBranch("memproses pesanan WA ke kasir")) return false;
+
+    const draftItems = Array.isArray(draft.items) ? draft.items : [];
+    const unmatched = Array.isArray(draft.unmatchedItems) ? draft.unmatchedItems : [];
+    const nextCart = [];
+    const skipped = [];
+
+    draftItems.forEach((it) => {
+      const idTarget = String(it.idBarang || it.id || "").trim().toLowerCase();
+      const namaTarget = String(it.namaBarang || it.nama || "").trim().toLowerCase();
+
+      const prod = state.produk.find(
+        (p) =>
+          (idTarget && String(p.id || "").trim().toLowerCase() === idTarget) ||
+          (namaTarget && String(p.nama || "").trim().toLowerCase() === namaTarget)
+      );
+
+      if (!prod) {
+        skipped.push(it.namaBarang || it.idBarang || "Item");
+        return;
+      }
+
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      const existing = nextCart.find((c) => c.id === prod.id);
+      if (existing) {
+        existing.qty += qty;
+      } else {
+        nextCart.push({
+          id: prod.id,
+          nama: prod.nama,
+          kategori: prod.kategori,
+          satuan: prod.satuan,
+          stok: prod.stok,
+          hargaNormal: Number(prod.hargaJual) || 0,
+          harga: Number(prod.hargaJual) || 0,
+          qty: qty
+        });
+      }
+    });
+
+    state.cart = nextCart;
+    state.activeCheckoutReqId = "";
+    state.pendingInboxDraft = draft;
+
+    renderKasirProduk();
+    updateCartFooter();
+
+    if (nextCart.length === 0) {
+      window.POS_AUTH.showToast(
+        "Tidak ada item WA yang cocok dengan katalog cabang aktif. Pilih barang secara manual.",
+        "error"
+      );
+      return false;
+    }
+
+    const totalUnmatched = skipped.length + unmatched.length;
+    const msg =
+      totalUnmatched > 0
+        ? `${nextCart.length} produk WA masuk keranjang (${totalUnmatched} item belum cocok, cek catatan).`
+        : `${nextCart.length} produk WA untuk "${draft.namaPelanggan || "Umum"}" masuk keranjang!`;
+    window.POS_AUTH.showToast(msg, "success");
+    return true;
+  }
+
   // ==========================================================================
   // 4. MODAL CHECKOUT, AUTO HARGA KHUSUS, DISKON & MODE NGAMPAS
   // ==========================================================================
@@ -596,8 +663,15 @@ window.POS_RETAIL = (function () {
     });
 
     onCheckoutMetodeChange();
-    renderCheckoutCartList();
-    recalculateCheckout();
+
+    // Jika berasal dari Inbox Smart Paste WA, isi otomatis nama pelanggan & terapkan Harga Khusus
+    if (state.pendingInboxDraft && state.pendingInboxDraft.namaPelanggan && pelInput) {
+      pelInput.value = state.pendingInboxDraft.namaPelanggan;
+      onPelangganInputChange();
+    } else {
+      renderCheckoutCartList();
+      recalculateCheckout();
+    }
 
     const modal = document.getElementById("modal-checkout");
     if (modal) modal.classList.add("open");
@@ -924,6 +998,16 @@ window.POS_RETAIL = (function () {
       Object.assign({ isVoid: false, cabang: state.cabang }, receiptData)
     );
 
+    // Jika transaksi berasal dari Inbox Smart Paste WA, tandai SELESAI & tautkan ID Transaksi
+    if (state.pendingInboxDraft && state.pendingInboxDraft.inboxId && window.POS_API.updateInboxPesanan) {
+      const linkedInboxId = state.pendingInboxDraft.inboxId;
+      state.pendingInboxDraft = null;
+      window.POS_API.updateInboxPesanan({
+        inboxId: linkedInboxId,
+        status: "SELESAI",
+        linkedRefId: res.data.idTrx
+      }).catch(() => {});
+    }
     // Bersihkan keranjang & tutup modal
     state.cart = [];
     state.activeCheckoutReqId = "";
@@ -1788,6 +1872,7 @@ window.POS_RETAIL = (function () {
     changeCartQty,
     setCartQty,
     clearCart,
+    applyInboxDraft,
     openCheckoutModal,
     closeCheckoutModal,
     onNgampasToggle,

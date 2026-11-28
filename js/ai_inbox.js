@@ -1134,18 +1134,37 @@ window.POS_AI_INBOX = (function () {
         sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
       } catch (e) {}
 
-      // Broadcast event agar modul kasir / supir yang sudah terpasang dapat langsung menangkap payload
+      // Jika cabang aktif saat ini berbeda (mis. sedang di 'all' atau cabang lain), pindah cabang otomatis dulu
+      const session = getSession();
+      if (
+        draft.cabang &&
+        session &&
+        session.activeCabang !== draft.cabang &&
+        window.POS_AUTH &&
+        typeof window.POS_AUTH.onBranchSwitch === "function"
+      ) {
+        await window.POS_AUTH.onBranchSwitch(draft.cabang);
+      }
+
       window.dispatchEvent(new CustomEvent("pos:inboxDraftReady", { detail: draft }));
 
       if (target === "KASIR_RETAIL") {
-        // Coba isi otomatis input pelanggan kasir jika tersedia di DOM
-        const pelInp = document.querySelector("#kasir-nama-pelanggan, #nama-pelanggan");
-        if (pelInp && draft.namaPelanggan) pelInp.value = draft.namaPelanggan;
-        showToast(`Draft Kasir (${draft.items.length} item) siap untuk ${draft.namaPelanggan}.`, "success");
         navigateToPage("page-kasir");
+        setTimeout(() => {
+          if (window.POS_RETAIL && typeof window.POS_RETAIL.applyInboxDraft === "function") {
+            window.POS_RETAIL.applyInboxDraft(draft);
+          }
+        }, 180);
       } else {
-        showToast(`Draft Tugas Supir siap untuk ${draft.namaPelanggan}.`, "success");
         navigateToPage("page-supir");
+        setTimeout(() => {
+          if (
+            window.POS_DRIVER_CUSTOMER &&
+            typeof window.POS_DRIVER_CUSTOMER.openMulaiAntarFromInbox === "function"
+          ) {
+            window.POS_DRIVER_CUSTOMER.openMulaiAntarFromInbox(draft);
+          }
+        }, 200);
       }
 
       loadInboxQueue();

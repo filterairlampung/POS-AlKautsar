@@ -34,6 +34,7 @@ window.POS_DRIVER_CUSTOMER = (function () {
     fotoAntarCompressed: null, // { base64, mime, sizeKb, width, height }
     fotoBayarCompressed: null,
     isSyncingQueue: false,
+    pendingInboxId: "",
     initialized: false
   };
 
@@ -1082,6 +1083,68 @@ window.POS_DRIVER_CUSTOMER = (function () {
     const modal = document.getElementById("modal-mulai-antar");
     if (modal) { modal.classList.add("show", "active"); modal.style.display = "flex"; }
   }
+  async function openMulaiAntarFromInbox(draft) {
+    if (!draft || typeof draft !== "object") return;
+    await openMulaiAntarModal();
+
+    state.pendingInboxId = String(draft.inboxId || "").trim();
+
+    const setVal = (id, v) => {
+      const el = document.getElementById(id);
+      if (el && v !== undefined && v !== null) el.value = String(v);
+    };
+
+    const namaPel = String(draft.namaPelanggan || "").trim();
+    setVal("mulai-nama-pelanggan", namaPel);
+    setVal("mulai-no-wa", draft.noHp || "");
+    setVal("mulai-alamat", draft.alamat || "");
+
+    // Cocokkan otomatis dengan Direktori Pelanggan untuk melengkapi No WA / Alamat / Maps
+    if (namaPel) {
+      const foundPlg = state.pelangganList.find(
+        (p) => String(p.nama || "").trim().toLowerCase() === namaPel.toLowerCase()
+      );
+      if (foundPlg) {
+        setVal("mulai-pelanggan-select", foundPlg.pelangganId);
+        if (!draft.noHp && foundPlg.noWa) setVal("mulai-no-wa", foundPlg.noWa);
+        if (!draft.alamat && foundPlg.alamat) setVal("mulai-alamat", foundPlg.alamat);
+        if (foundPlg.mapsUrl) setVal("mulai-maps-url", foundPlg.mapsUrl);
+      }
+    }
+
+    // Parse jadwalWIB bila formatnya YYYY-MM-DD atau YYYY-MM-DD HH:mm
+    const jadwalStr = String(draft.jadwalWIB || "").trim();
+    const dateMatch = jadwalStr.match(/(\d{4}-\d{2}-\d{2})/);
+    const timeMatch = jadwalStr.match(/(\d{2}:\d{2})/);
+    if (dateMatch) setVal("mulai-tanggal", dateMatch[1]);
+    if (timeMatch) setVal("mulai-waktu", timeMatch[1]);
+
+    // Masukkan daftar item cocok ke state.muatanDraft
+    const items = Array.isArray(draft.items) ? draft.items : [];
+    const unmatched = Array.isArray(draft.unmatchedItems) ? draft.unmatchedItems : [];
+
+    state.muatanDraft = items
+      .filter((it) => it && (it.idBarang || it.namaBarang))
+      .map((it) => ({
+        idBarang: String(it.idBarang || "").trim(),
+        namaBarang: String(it.namaBarang || "Barang").trim(),
+        qty: Math.max(1, Math.round(Number(it.qty) || 1)),
+        hargaJual: Math.max(0, Math.round(Number(it.hargaJual) || 0))
+      }));
+
+    // Gabungkan catatan WA + info item belum cocok (jika ada) agar supir/admin tidak terlewat
+    const catatanParts = [];
+    if (draft.catatan) catatanParts.push(String(draft.catatan).trim());
+    if (jadwalStr && !dateMatch) catatanParts.push("Jadwal WA: " + jadwalStr);
+    if (unmatched.length > 0) {
+      const unmText = unmatched.map((u) => `${u.namaMentah || u.namaBarang} (${u.qty})`).join(", ");
+      catatanParts.push("Item belum di katalog: " + unmText);
+    }
+    setVal("mulai-catatan", catatanParts.join(" | "));
+
+    renderMuatanDraft();
+    showToast(`Form pengantaran diisi otomatis dari Inbox WA (${state.muatanDraft.length} item).`);
+  }
 
   function closeMulaiAntarModal() {
     const modal = document.getElementById("modal-mulai-antar");
@@ -1197,6 +1260,15 @@ window.POS_DRIVER_CUSTOMER = (function () {
     if (btn) btn.disabled = false;
 
     if (res.sukses) {
+      if (state.pendingInboxId && window.POS_API && window.POS_API.updateInboxPesanan) {
+        const linkedId = state.pendingInboxId;
+        state.pendingInboxId = "";
+        window.POS_API.updateInboxPesanan({
+          inboxId: linkedId,
+          status: "SELESAI",
+          linkedRefId: (res.data && res.data.tugasId) || ""
+        }).catch(() => {});
+      }
       showToast(res.pesan || "Tugas pengantaran berhasil dibuat.");
       closeMulaiAntarModal();
       loadDaftarTugasSupir();
@@ -1585,6 +1657,8 @@ window.POS_DRIVER_CUSTOMER = (function () {
     switchSupirTab,
     loadDaftarTugasSupir,
     openMulaiAntarModal,
+    openMulaiAntarFromInbox,
+    closeMulaiAntarModal,
     closeMulaiAntarModal,
     onMulaiPelangganPicked,
     addMuatanItem,
